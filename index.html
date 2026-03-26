@@ -172,6 +172,20 @@ tr:hover td { background:#fafaf8; }
 .stock-low { color:var(--danger); font-weight:700; }
 .stock-ok { color:var(--success); }
 
+/* CAJEROS MONITOREO */
+.cajero-card {
+  background:white; border-radius:14px; border:1px solid var(--border);
+  padding:20px; display:flex; align-items:center; justify-content:space-between; gap:16px;
+  margin-bottom:12px;
+}
+.cajero-info { flex:1; }
+.cajero-nombre { font-weight:700; font-size:15px; margin-bottom:4px; }
+.cajero-stats { display:flex; gap:16px; font-size:12px; color:var(--muted); font-family:'JetBrains Mono',monospace; }
+.cajero-total { font-family:'Syne',sans-serif; font-size:22px; font-weight:800; color:var(--accent); }
+.alerta-card { padding:12px 16px; border-radius:10px; font-size:13px; margin-bottom:8px; display:flex; align-items:center; gap:8px; }
+.alerta-warning { background:#fff3cd; color:#856404; border-left:4px solid var(--warn); }
+.alerta-danger { background:#ffe0dc; color:#e63946; border-left:4px solid var(--danger); }
+
 /* RESPONSIVE */
 @media(max-width:768px) {
   .sidebar { width:60px; }
@@ -209,14 +223,15 @@ tr:hover td { background:#fafaf8; }
     <nav class="sidebar">
       <div class="sidebar-logo">Tienda<span>OS</span></div>
       <div class="sidebar-section">Principal</div>
-      <div class="nav-item active" onclick="showPage('dashboard')"><span class="icon">📊</span><span>Dashboard</span></div>
-      <div class="nav-item" onclick="showPage('pos')"><span class="icon">🛒</span><span>Punto de Venta</span></div>
+      <div class="nav-item active" onclick="showPage('dashboard', this)"><span class="icon">📊</span><span>Dashboard</span></div>
+      <div class="nav-item" onclick="showPage('pos', this)"><span class="icon">🛒</span><span>Punto de Venta</span></div>
       <div class="sidebar-section">Gestión</div>
-      <div class="nav-item" onclick="showPage('inventario')"><span class="icon">📦</span><span>Inventario</span></div>
-      <div class="nav-item" onclick="showPage('ventas')"><span class="icon">💰</span><span>Ventas</span></div>
-      <div class="nav-item" onclick="showPage('corte')"><span class="icon">🧾</span><span>Corte de Caja</span></div>
+      <div class="nav-item" onclick="showPage('inventario', this)"><span class="icon">📦</span><span>Inventario</span></div>
+      <div class="nav-item" onclick="showPage('ventas', this)"><span class="icon">💰</span><span>Ventas</span></div>
+      <div class="nav-item" onclick="showPage('corte', this)"><span class="icon">🧾</span><span>Corte de Caja</span></div>
       <div class="sidebar-section" id="sectionAdmin" style="display:none">Admin</div>
-      <div class="nav-item" id="navUsuarios" style="display:none" onclick="showPage('usuarios')"><span class="icon">👥</span><span>Usuarios</span></div>
+      <div class="nav-item" id="navUsuarios" style="display:none" onclick="showPage('usuarios', this)"><span class="icon">👥</span><span>Usuarios</span></div>
+      <div class="nav-item" id="navCajeros" style="display:none" onclick="showPage('cajeros', this)"><span class="icon">🔍</span><span>Monitoreo</span></div>
       <div class="sidebar-user">
         <div class="name" id="sidebarName">—</div>
         <div class="role" id="sidebarRole">—</div>
@@ -231,6 +246,7 @@ tr:hover td { background:#fafaf8; }
       <div class="page active" id="page-dashboard">
         <div class="page-title">Dashboard</div>
         <div class="page-sub" id="dashFecha">—</div>
+        <div id="dashAlertasActividad" style="margin-bottom:16px"></div>
         <div class="stats-grid">
           <div class="stat-card" style="--accent-color:#2d6a4f">
             <div class="stat-label">Ventas Hoy</div>
@@ -264,6 +280,11 @@ tr:hover td { background:#fafaf8; }
             <table><thead><tr><th>Producto</th><th>Stock</th><th>Mínimo</th></tr></thead>
             <tbody id="dashAlertas"></tbody></table>
           </div>
+        </div>
+        <!-- CAJEROS HOY -->
+        <div id="dashCajerosSection" style="display:none;margin-top:20px">
+          <div style="font-family:'Syne',sans-serif;font-size:18px;font-weight:800;margin-bottom:16px">👥 Actividad de Cajeros Hoy</div>
+          <div id="dashCajeros"></div>
         </div>
       </div>
 
@@ -320,7 +341,7 @@ tr:hover td { background:#fafaf8; }
           <label style="display:flex;align-items:center;gap:6px;font-size:13px">
             <input type="checkbox" id="invBajoStock" onchange="loadInventario()"> Solo bajo stock
           </label>
-          <button class="btn btn-primary" onclick="openModal('modalProducto')">+ Nuevo Producto</button>
+          <button class="btn btn-primary" onclick="nuevoProducto()">+ Nuevo Producto</button>
         </div>
         <div class="table-card">
           <table>
@@ -362,8 +383,7 @@ tr:hover td { background:#fafaf8; }
           </div>
           <button class="btn btn-primary" style="width:100%" onclick="hacerCorte()">🧾 Generar Corte</button>
         </div>
-        <div id="corteResultado" style="display:none" class="table-card" style="max-width:500px;margin-top:20px;padding:28px">
-        </div>
+        <div id="corteResultado" style="display:none" class="table-card" style="max-width:500px;margin-top:20px;padding:28px"></div>
         <div class="table-card" style="margin-top:20px">
           <div class="table-header"><span class="table-title">Historial de Cortes</span></div>
           <table><thead><tr><th>Fecha</th><th>Cajero</th><th>Ventas</th><th>Efectivo</th><th>Tarjeta</th><th>Total</th></tr></thead>
@@ -382,6 +402,18 @@ tr:hover td { background:#fafaf8; }
             <tbody id="usuariosTable"></tbody>
           </table>
         </div>
+      </div>
+
+      <!-- MONITOREO CAJEROS -->
+      <div class="page" id="page-cajeros">
+        <div class="page-title">Monitoreo de Cajeros</div>
+        <div class="page-sub">Actividad detallada por empleado</div>
+        <div class="search-row">
+          <input type="date" id="cajeroFecha" onchange="loadCajerosActividad()" style="padding:10px;border:2px solid var(--border);border-radius:10px">
+          <button class="btn btn-secondary" onclick="setCajeroHoy()">Hoy</button>
+        </div>
+        <div id="alertasActividad" style="margin-bottom:16px"></div>
+        <div id="cajerosLista"></div>
       </div>
 
     </main>
@@ -461,7 +493,7 @@ tr:hover td { background:#fafaf8; }
 </div>
 
 <script>
-const API = '';  // Cambia a tu URL en producción ej: 'https://tu-app.railway.app'
+const API = '';
 let token = localStorage.getItem('token');
 let user = JSON.parse(localStorage.getItem('user') || 'null');
 let carrito = [];
@@ -514,6 +546,8 @@ function initApp() {
   if (user.rol === 'dueno') {
     document.getElementById('sectionAdmin').style.display = 'block';
     document.getElementById('navUsuarios').style.display = 'flex';
+    document.getElementById('navCajeros').style.display = 'flex';
+    document.getElementById('dashCajerosSection').style.display = 'block';
   }
   document.getElementById('dashFecha').textContent = new Date().toLocaleDateString('es-MX', { weekday:'long', year:'numeric', month:'long', day:'numeric' });
   const hoy = new Date().toISOString().split('T')[0];
@@ -523,15 +557,16 @@ function initApp() {
 }
 
 // ===== NAVIGATION =====
-function showPage(page) {
+function showPage(page, el) {
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
   document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
   document.getElementById('page-' + page).classList.add('active');
-  event.currentTarget.classList.add('active');
+  if (el) el.classList.add('active');
   if (page === 'inventario') loadInventario();
   if (page === 'ventas') { resetVentasFiltro(); loadVentas(); }
   if (page === 'corte') loadCortes();
   if (page === 'usuarios') loadUsuarios();
+  if (page === 'cajeros') { setCajeroHoy(); loadCajerosActividad(); }
 }
 
 // ===== DASHBOARD =====
@@ -548,7 +583,49 @@ async function loadDashboard() {
     document.getElementById('dashAlertas').innerHTML = d.alertas.map(p =>
       `<tr><td>${p.nombre}</td><td class="stock-low">${p.stock}</td><td>${p.stock_minimo}</td></tr>`
     ).join('') || '<tr><td colspan="3" style="color:var(--success);text-align:center">✅ Todo en orden</td></tr>';
+
+    // Alertas de actividad inusual
+    if (d.alertas_actividad && d.alertas_actividad.length > 0) {
+      document.getElementById('dashAlertasActividad').innerHTML = d.alertas_actividad.map(a =>
+        `<div class="alerta-card alerta-${a.tipo}">⚠️ ${a.mensaje}</div>`
+      ).join('');
+    }
+
+    // Cajeros hoy (solo dueño)
+    if (user && user.rol === 'dueno' && d.actividad_cajeros) {
+      document.getElementById('dashCajeros').innerHTML = d.actividad_cajeros.map(c =>
+        `<div class="cajero-card">
+          <div class="cajero-info">
+            <div class="cajero-nombre">${c.nombre} <span class="badge ${c.activo ? 'badge-green' : 'badge-red'}">${c.activo ? 'Activo' : 'Bloqueado'}</span></div>
+            <div class="cajero-stats">
+              <span>${c.num_ventas} ventas</span>
+              <span>Última: ${c.ultima_venta ? new Date(c.ultima_venta).toLocaleTimeString('es-MX') : 'Sin actividad'}</span>
+            </div>
+          </div>
+          <div class="cajero-total">$${(c.total_vendido||0).toFixed(2)}</div>
+          ${c.activo
+            ? `<button class="btn btn-danger btn-sm" onclick="bloquearCajero(${c.id}, '${c.nombre}')">🚫 Bloquear</button>`
+            : `<button class="btn btn-primary btn-sm" onclick="activarCajero(${c.id}, '${c.nombre}')">✅ Activar</button>`
+          }
+        </div>`
+      ).join('') || '<div style="color:var(--muted);font-size:13px">Sin empleados registrados</div>';
+    }
   } catch(e) { console.error(e); }
+}
+
+async function bloquearCajero(id, nombre) {
+  if (!confirm(`¿Bloquear acceso a ${nombre}? Ya no podrá entrar al sistema.`)) return;
+  try {
+    await api('PATCH', '/usuarios/' + id + '/toggle');
+    loadDashboard();
+  } catch(e) { alert(e.message); }
+}
+
+async function activarCajero(id, nombre) {
+  try {
+    await api('PATCH', '/usuarios/' + id + '/toggle');
+    loadDashboard();
+  } catch(e) { alert(e.message); }
 }
 
 // ===== POS =====
@@ -652,7 +729,6 @@ function showPosAlert(msg, type) {
   setTimeout(() => el.innerHTML = '', 3000);
 }
 
-// CAMARA
 function toggleCam() {
   const cam = document.getElementById('scannerCam');
   if (camActiva) {
@@ -684,6 +760,7 @@ async function loadInventario() {
   if (categoria) qs.set('categoria', categoria);
   if (bajo_stock) qs.set('bajo_stock', '1');
   const prods = await api('GET', '/productos?' + qs.toString());
+  productosCache = prods;
   document.getElementById('invTable').innerHTML = prods.map(p =>
     `<tr>
       <td style="font-family:'JetBrains Mono',monospace">${p.codigo}</td>
@@ -699,6 +776,21 @@ async function loadInventario() {
       </td>
     </tr>`
   ).join('') || '<tr><td colspan="7" style="text-align:center;color:var(--muted);padding:20px">Sin productos</td></tr>';
+}
+
+// ✅ FIX: función separada para nuevo producto que limpia el formulario
+function nuevoProducto() {
+  document.getElementById('prodId').value = '';
+  document.getElementById('prodCodigo').value = '';
+  document.getElementById('prodNombre').value = '';
+  document.getElementById('prodCategoria').value = 'General';
+  document.getElementById('prodUnidad').value = 'pza';
+  document.getElementById('prodPrecioCompra').value = '';
+  document.getElementById('prodPrecioVenta').value = '';
+  document.getElementById('prodStock').value = '';
+  document.getElementById('prodStockMin').value = '5';
+  document.getElementById('modalProdTitle').textContent = 'Nuevo Producto';
+  openModal('modalProducto');
 }
 
 function openModal(id) { document.getElementById(id).classList.add('open'); }
@@ -735,8 +827,6 @@ async function guardarProducto() {
     if (id) await api('PUT', '/productos/' + id, data);
     else await api('POST', '/productos', data);
     closeModal('modalProducto');
-    document.getElementById('prodId').value = '';
-    document.getElementById('modalProdTitle').textContent = 'Nuevo Producto';
     loadInventario(); loadProductosPos();
   } catch(e) { alert(e.message); }
 }
@@ -813,12 +903,14 @@ async function hacerCorte() {
     const el = document.getElementById('corteResultado');
     el.style.display = 'block';
     el.innerHTML = `
-      <div style="font-family:'Syne',sans-serif;font-size:18px;font-weight:800;margin-bottom:16px">✅ Corte Generado</div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
-        <div class="stat-card" style="--accent-color:var(--accent)"><div class="stat-label">Total Ventas</div><div class="stat-value">$${r.total_ventas.toFixed(2)}</div></div>
-        <div class="stat-card" style="--accent-color:var(--accent2)"><div class="stat-label">Num. Ventas</div><div class="stat-value">${r.num_ventas}</div></div>
-        <div class="stat-card"><div class="stat-label">💵 Efectivo</div><div class="stat-value">$${r.efectivo.toFixed(2)}</div></div>
-        <div class="stat-card"><div class="stat-label">💳 Tarjeta</div><div class="stat-value">$${r.tarjeta.toFixed(2)}</div></div>
+      <div style="padding:28px">
+        <div style="font-family:'Syne',sans-serif;font-size:18px;font-weight:800;margin-bottom:16px">✅ Corte Generado</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+          <div class="stat-card" style="--accent-color:var(--accent)"><div class="stat-label">Total Ventas</div><div class="stat-value">$${r.total_ventas.toFixed(2)}</div></div>
+          <div class="stat-card" style="--accent-color:var(--accent2)"><div class="stat-label">Num. Ventas</div><div class="stat-value">${r.num_ventas}</div></div>
+          <div class="stat-card"><div class="stat-label">💵 Efectivo</div><div class="stat-value">$${r.efectivo.toFixed(2)}</div></div>
+          <div class="stat-card"><div class="stat-label">💳 Tarjeta</div><div class="stat-value">$${r.tarjeta.toFixed(2)}</div></div>
+        </div>
       </div>`;
     loadCortes();
   } catch(e) { alert(e.message); }
@@ -868,6 +960,49 @@ async function guardarUsuario() {
 async function toggleUsuario(id) {
   await api('PATCH', '/usuarios/' + id + '/toggle');
   loadUsuarios();
+}
+
+// ===== MONITOREO CAJEROS =====
+function setCajeroHoy() {
+  document.getElementById('cajeroFecha').value = new Date().toISOString().split('T')[0];
+}
+
+async function loadCajerosActividad() {
+  const fecha = document.getElementById('cajeroFecha').value;
+  try {
+    const r = await api('GET', '/cajeros/actividad?fecha=' + fecha);
+
+    // Alertas de actividad
+    const d = await api('GET', '/dashboard');
+    if (d.alertas_actividad && d.alertas_actividad.length > 0) {
+      document.getElementById('alertasActividad').innerHTML = d.alertas_actividad.map(a =>
+        `<div class="alerta-card alerta-${a.tipo}">⚠️ ${a.mensaje}</div>`
+      ).join('');
+    } else {
+      document.getElementById('alertasActividad').innerHTML = '<div class="alert alert-success">✅ Sin actividad inusual hoy</div>';
+    }
+
+    document.getElementById('cajerosLista').innerHTML = r.cajeros.map(c => `
+      <div class="cajero-card">
+        <div class="cajero-info">
+          <div class="cajero-nombre">${c.nombre} <span class="badge ${c.activo ? 'badge-green' : 'badge-red'}">${c.activo ? 'Activo' : 'Bloqueado'}</span></div>
+          <div class="cajero-stats">
+            <span>${c.num_ventas} ventas</span>
+            <span>💵 $${(c.efectivo||0).toFixed(2)}</span>
+            <span>💳 $${(c.tarjeta||0).toFixed(2)}</span>
+            <span>📱 $${(c.transferencia||0).toFixed(2)}</span>
+            <span>Descuentos: $${(c.total_descuentos||0).toFixed(2)}</span>
+            <span>Última venta: ${c.ultima_venta ? new Date(c.ultima_venta).toLocaleTimeString('es-MX') : 'Sin actividad'}</span>
+          </div>
+        </div>
+        <div class="cajero-total">$${(c.total_vendido||0).toFixed(2)}</div>
+        ${c.activo
+          ? `<button class="btn btn-danger btn-sm" onclick="bloquearCajero(${c.id}, '${c.nombre}')">🚫 Bloquear</button>`
+          : `<button class="btn btn-primary btn-sm" onclick="activarCajero(${c.id}, '${c.nombre}')">✅ Activar</button>`
+        }
+      </div>
+    `).join('') || '<div style="color:var(--muted);font-size:13px">Sin empleados registrados</div>';
+  } catch(e) { console.error(e); }
 }
 
 // INIT
