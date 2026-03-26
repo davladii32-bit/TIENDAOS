@@ -257,10 +257,13 @@ app.get('/api/ventas/:id', authMiddleware, (req, res) => {
   res.json({ ...venta, items });
 });
 
-// ===== CORTE DE CAJA =====
+// ===== CORTE DE CAJA (BUG CORREGIDO) =====
 app.post('/api/cortes', authMiddleware, (req, res) => {
   const { fecha_inicio, notas } = req.body;
-  const desde = fecha_inicio || new Date(Date.now() - 24*60*60*1000).toISOString();
+
+  // ✅ CORRECCIÓN: usar inicio del día de hoy en lugar de hace 24 horas
+  const desde = fecha_inicio || new Date().toISOString().split('T')[0] + 'T00:00:00.000Z';
+
   const ventas = db.prepare('SELECT * FROM ventas WHERE creado_en >= ? AND creado_en <= CURRENT_TIMESTAMP').all(desde);
   const total = ventas.reduce((s, v) => s + v.total, 0);
   const efectivo = ventas.filter(v => v.metodo_pago === 'efectivo').reduce((s, v) => s + v.total, 0);
@@ -283,7 +286,95 @@ app.get('/api/dashboard', authMiddleware, (req, res) => {
   const bajo_stock = db.prepare('SELECT COUNT(*) as num FROM productos WHERE activo = 1 AND stock <= stock_minimo').get();
   const ultimas_ventas = db.prepare('SELECT v.folio, v.total, v.metodo_pago, v.creado_en, u.nombre as cajero FROM ventas v LEFT JOIN usuarios u ON v.usuario_id = u.id ORDER BY v.creado_en DESC LIMIT 5').all();
   const alertas = db.prepare('SELECT nombre, codigo, stock, stock_minimo FROM productos WHERE activo = 1 AND stock <= stock_minimo ORDER BY stock ASC LIMIT 10').all();
-  res.json({ ventas_hoy, productos_total, bajo_stock, ultimas_ventas, alertas });
+
+  // ✅ NUEVO: actividad por cajero hoy
+  const actividad_cajeros = db.prepare(`
+    SELECT u.id, u.nombre, u.activo,
+      COUNT(v.id) as num_ventas,
+      COALESCE(SUM(v.total), 0) as total_vendido,
+      MAX(v.creado_en) as ultima_venta
+    FROM usuarios u
+    LEFT JOIN ventas v ON v.usuario_id = u.id AND date(v.creado_en) = ?
+    WHERE u.rol != 'dueno'
+    GROUP BY u.id
+    ORDER BY total_vendido DESC
+  `).all(hoy);
+
+  // ✅ NUEVO: alertas de actividad inusual
+  const alertas_actividad = [];
+
+  // Detectar ventas fuera de horario (antes de 7am o después de 10pm)
+  const ventas_fuera_horario = db.prepare(`
+    SELECT COUNT(*) as num FROM ventas
+    WHERE date(creado_en) = ?
+    AND (CAST(strftime('%H', creado_en) AS INTEGER) < 7
+      OR CAST(strftime('%H', creado_en) AS INTEGER) >= 22)
+  `).get(hoy);
+  if (ventas_fuera_horario.num > 0) {
+    alertas_actividad.push({
+      tipo: 'warning',
+      mensaje: `${ventas_fuera_horario.num} venta(s) fuera de horario normal (antes 7am o después 10pm)`
+    });
+  }
+
+  // Detectar cajero con muchos descuentos hoy
+  const descuentos_sospechosos = db.prepare(`
+    SELECT u.nombre, COUNT(v.id) as num_descuentos
+    FROM ventas v
+    LEFT JOIN usuarios u ON v.usuario_id = u.id
+    WHERE date(v.creado_en) = ? AND v.descuento > 0
+    GROUP BY v.usuario_id
+    HAVING num_descuentos >= 3
+  `).all(hoy);
+  descuentos_sospechosos.forEach(d => {
+    alertas_actividad.push({
+      tipo: 'danger',
+      mensaje: `${d.nombre} aplicó descuentos en ${d.num_descuentos} ventas hoy`
+    });
+  });
+
+  // Detectar cajero con alto volumen inusual (más de 50 ventas en un día)
+  const volumen_alto = db.prepare(`
+    SELECT u.nombre, COUNT(v.id) as num
+    FROM ventas v
+    LEFT JOIN usuarios u ON v.usuario_id = u.id
+    WHERE date(v.creado_en) = ?
+    GROUP BY v.usuario_id
+    HAVING num > 50
+  `).all(hoy);
+  volumen_alto.forEach(d => {
+    alertas_actividad.push({
+      tipo: 'warning',
+      mensaje: `${d.nombre} tiene ${d.num} ventas hoy — volumen inusualmente alto`
+    });
+  });
+
+  res.json({ ventas_hoy, productos_total, bajo_stock, ultimas_ventas, alertas, actividad_cajeros, alertas_actividad });
+});
+
+// ===== MONITOREO DE CAJEROS (solo dueño) =====
+app.get('/api/cajeros/actividad', authMiddleware, solodueno, (req, res) => {
+  const { fecha } = req.query;
+  const dia = fecha || new Date().toISOString().split('T')[0];
+
+  const actividad = db.prepare(`
+    SELECT
+      u.id, u.nombre, u.email, u.rol, u.activo,
+      COUNT(v.id) as num_ventas,
+      COALESCE(SUM(v.total), 0) as total_vendido,
+      COALESCE(SUM(CASE WHEN v.metodo_pago = 'efectivo' THEN v.total ELSE 0 END), 0) as efectivo,
+      COALESCE(SUM(CASE WHEN v.metodo_pago = 'tarjeta' THEN v.total ELSE 0 END), 0) as tarjeta,
+      COALESCE(SUM(CASE WHEN v.metodo_pago = 'transferencia' THEN v.total ELSE 0 END), 0) as transferencia,
+      COALESCE(SUM(v.descuento), 0) as total_descuentos,
+      MAX(v.creado_en) as ultima_venta
+    FROM usuarios u
+    LEFT JOIN ventas v ON v.usuario_id = u.id AND date(v.creado_en) = ?
+    WHERE u.rol != 'dueno'
+    GROUP BY u.id
+    ORDER BY total_vendido DESC
+  `).all(dia);
+
+  res.json({ fecha: dia, cajeros: actividad });
 });
 
 app.listen(PORT, () => console.log(`✅ Servidor corriendo en puerto ${PORT}`));
