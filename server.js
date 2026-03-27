@@ -78,7 +78,7 @@ db.exec(`
     usuario_id INTEGER,
     creado_en DATETIME DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (producto_id) REFERENCES productos(id),
-    FOREIGN KEY (usuario_id) REFERENCIAS usuarios(id)
+    FOREIGN KEY (usuario_id) REFERENCES usuarios(id)
   );
 
   CREATE TABLE IF NOT EXISTS cortes (
