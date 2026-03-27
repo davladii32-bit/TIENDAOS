@@ -8,70 +8,39 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/quagga/0.12.1/quagga.min.js"></script>
 <style>
 :root {
-  --bg: #f8f7f4;
-  --surface: #ffffff;
-  --card: #ffffff;
-  --border: #e8e6e0;
-  --accent: #2d6a4f;
-  --accent2: #40916c;
-  --accent3: #e76f51;
-  --warn: #f4a261;
-  --text: #1a1a1a;
-  --muted: #888880;
-  --sidebar: #1a2e1f;
-  --sidebar-text: #c8d8cb;
-  --sidebar-active: #2d6a4f;
-  --danger: #e63946;
-  --success: #2d6a4f;
+  --bg: #f8f7f4; --surface: #ffffff; --card: #ffffff; --border: #e8e6e0;
+  --accent: #2d6a4f; --accent2: #40916c; --accent3: #e76f51; --warn: #f4a261;
+  --text: #1a1a1a; --muted: #888880; --sidebar: #1a2e1f; --sidebar-text: #c8d8cb;
+  --danger: #e63946; --success: #2d6a4f;
 }
-
 * { margin:0; padding:0; box-sizing:border-box; }
 body { font-family:'Nunito',sans-serif; background:var(--bg); color:var(--text); min-height:100vh; }
 
-/* LOGIN */
-#loginScreen {
-  min-height:100vh; display:flex; align-items:center; justify-content:center;
-  background: linear-gradient(135deg, #1a2e1f 0%, #2d6a4f 100%);
-}
-.login-box {
-  background:white; border-radius:20px; padding:48px 40px; width:360px;
-  box-shadow: 0 20px 60px rgba(0,0,0,0.3);
-}
+#loginScreen { min-height:100vh; display:flex; align-items:center; justify-content:center; background:linear-gradient(135deg,#1a2e1f,#2d6a4f); }
+.login-box { background:white; border-radius:20px; padding:48px 40px; width:360px; box-shadow:0 20px 60px rgba(0,0,0,0.3); }
 .login-logo { font-family:'Syne',sans-serif; font-size:28px; font-weight:800; color:var(--accent); margin-bottom:4px; }
 .login-sub { font-size:13px; color:var(--muted); margin-bottom:32px; }
 .form-group { margin-bottom:16px; }
 .form-group label { display:block; font-size:12px; font-weight:600; color:var(--muted); text-transform:uppercase; letter-spacing:1px; margin-bottom:6px; }
-.form-group input, .form-group select, .form-group textarea {
-  width:100%; padding:12px 14px; border:2px solid var(--border); border-radius:10px;
-  font-family:'Nunito',sans-serif; font-size:14px; transition:border-color .2s; outline:none;
-}
+.form-group input, .form-group select, .form-group textarea { width:100%; padding:12px 14px; border:2px solid var(--border); border-radius:10px; font-family:'Nunito',sans-serif; font-size:14px; transition:border-color .2s; outline:none; }
 .form-group input:focus, .form-group select:focus { border-color:var(--accent); }
 .btn { padding:12px 24px; border-radius:10px; border:none; cursor:pointer; font-family:'Nunito',sans-serif; font-weight:600; font-size:14px; transition:all .2s; }
-.btn-primary { background:var(--accent); color:white; width:100%; padding:14px; font-size:15px; }
+.btn-primary { background:var(--accent); color:white; }
 .btn-primary:hover { background:var(--accent2); transform:translateY(-1px); }
 .btn-secondary { background:var(--border); color:var(--text); }
 .btn-danger { background:var(--danger); color:white; }
-.btn-warn { background:var(--warn); color:white; }
+.btn-success { background:var(--success); color:white; }
 .btn-sm { padding:7px 14px; font-size:12px; }
+.btn-full { width:100%; padding:14px; font-size:15px; }
 
-/* APP LAYOUT */
 #app { display:none; min-height:100vh; }
 .layout { display:flex; min-height:100vh; }
 
-/* SIDEBAR */
-.sidebar {
-  width:220px; background:var(--sidebar); flex-shrink:0;
-  display:flex; flex-direction:column; padding:24px 0;
-  position:fixed; height:100vh; overflow-y:auto;
-}
+.sidebar { width:220px; background:var(--sidebar); flex-shrink:0; display:flex; flex-direction:column; padding:24px 0; position:fixed; height:100vh; overflow-y:auto; }
 .sidebar-logo { font-family:'Syne',sans-serif; font-size:20px; font-weight:800; color:white; padding:0 20px 24px; border-bottom:1px solid rgba(255,255,255,0.1); }
 .sidebar-logo span { color:var(--accent2); }
 .sidebar-section { padding:16px 12px 8px; font-size:10px; letter-spacing:2px; color:rgba(255,255,255,0.3); font-family:'JetBrains Mono',monospace; text-transform:uppercase; }
-.nav-item {
-  display:flex; align-items:center; gap:10px; padding:10px 20px;
-  color:var(--sidebar-text); cursor:pointer; transition:all .2s; font-size:14px; font-weight:500;
-  border-left:3px solid transparent; margin:2px 0;
-}
+.nav-item { display:flex; align-items:center; gap:10px; padding:10px 20px; color:var(--sidebar-text); cursor:pointer; transition:all .2s; font-size:14px; font-weight:500; border-left:3px solid transparent; margin:2px 0; }
 .nav-item:hover { background:rgba(255,255,255,0.07); color:white; }
 .nav-item.active { background:rgba(45,106,79,0.3); border-left-color:var(--accent2); color:white; }
 .nav-item .icon { font-size:16px; width:20px; }
@@ -81,25 +50,19 @@ body { font-family:'Nunito',sans-serif; background:var(--bg); color:var(--text);
 .logout-btn { margin-top:8px; font-size:11px; color:rgba(255,255,255,0.4); cursor:pointer; }
 .logout-btn:hover { color:white; }
 
-/* MAIN */
 .main { margin-left:220px; flex:1; padding:32px; }
 .page { display:none; }
 .page.active { display:block; }
 .page-title { font-family:'Syne',sans-serif; font-size:26px; font-weight:800; margin-bottom:4px; }
 .page-sub { color:var(--muted); font-size:14px; margin-bottom:28px; }
 
-/* STATS */
 .stats-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:16px; margin-bottom:28px; }
-.stat-card {
-  background:white; border-radius:14px; padding:20px; border:1px solid var(--border);
-  position:relative; overflow:hidden;
-}
+.stat-card { background:white; border-radius:14px; padding:20px; border:1px solid var(--border); position:relative; overflow:hidden; }
 .stat-card::before { content:''; position:absolute; top:0; left:0; right:0; height:3px; background:var(--accent-color,var(--accent)); }
 .stat-label { font-size:11px; letter-spacing:1.5px; text-transform:uppercase; color:var(--muted); font-family:'JetBrains Mono',monospace; margin-bottom:8px; }
 .stat-value { font-family:'Syne',sans-serif; font-size:28px; font-weight:800; }
 .stat-desc { font-size:12px; color:var(--muted); margin-top:4px; }
 
-/* TABLES */
 .table-card { background:white; border-radius:14px; border:1px solid var(--border); overflow:hidden; margin-bottom:20px; }
 .table-header { padding:16px 20px; border-bottom:1px solid var(--border); display:flex; justify-content:space-between; align-items:center; }
 .table-title { font-family:'Syne',sans-serif; font-weight:700; font-size:16px; }
@@ -109,36 +72,29 @@ td { padding:12px 16px; font-size:13px; border-bottom:1px solid #f5f5f0; }
 tr:last-child td { border-bottom:none; }
 tr:hover td { background:#fafaf8; }
 
-/* BADGES */
 .badge { display:inline-block; padding:3px 8px; border-radius:6px; font-size:11px; font-weight:600; font-family:'JetBrains Mono',monospace; }
 .badge-green { background:#d8f3dc; color:#2d6a4f; }
 .badge-red { background:#ffe0dc; color:#e63946; }
 .badge-warn { background:#fff3cd; color:#f4a261; }
 .badge-blue { background:#dce9ff; color:#2b5fad; }
 
-/* SEARCH BAR */
-.search-row { display:flex; gap:12px; margin-bottom:20px; align-items:center; }
-.search-input { flex:1; padding:10px 14px; border:2px solid var(--border); border-radius:10px; font-family:'Nunito',sans-serif; font-size:14px; outline:none; }
+.search-row { display:flex; gap:12px; margin-bottom:20px; align-items:center; flex-wrap:wrap; }
+.search-input { flex:1; padding:10px 14px; border:2px solid var(--border); border-radius:10px; font-family:'Nunito',sans-serif; font-size:14px; outline:none; min-width:150px; }
 .search-input:focus { border-color:var(--accent); }
 
-/* MODAL */
 .modal-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.5); z-index:100; align-items:center; justify-content:center; }
 .modal-overlay.open { display:flex; }
 .modal { background:white; border-radius:16px; padding:32px; width:500px; max-height:85vh; overflow-y:auto; box-shadow:0 20px 60px rgba(0,0,0,0.2); }
 .modal h2 { font-family:'Syne',sans-serif; font-size:20px; font-weight:800; margin-bottom:20px; }
 .modal-footer { display:flex; gap:10px; justify-content:flex-end; margin-top:24px; }
 
-/* PUNTO DE VENTA */
 .pos-layout { display:grid; grid-template-columns:1fr 380px; gap:20px; height:calc(100vh - 120px); }
 .pos-productos { background:white; border-radius:14px; border:1px solid var(--border); padding:20px; overflow-y:auto; }
 .pos-carrito { background:white; border-radius:14px; border:1px solid var(--border); padding:20px; display:flex; flex-direction:column; }
 .scanner-bar { display:flex; gap:10px; margin-bottom:16px; }
 .scanner-input { flex:1; padding:12px 14px; border:2px solid var(--accent); border-radius:10px; font-size:14px; font-family:'JetBrains Mono',monospace; outline:none; }
-.prod-grid { display:grid; grid-template-columns:repeat(auto-fill, minmax(130px,1fr)); gap:10px; }
-.prod-card {
-  border:2px solid var(--border); border-radius:10px; padding:12px; cursor:pointer; transition:all .2s;
-  text-align:center;
-}
+.prod-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(130px,1fr)); gap:10px; }
+.prod-card { border:2px solid var(--border); border-radius:10px; padding:12px; cursor:pointer; transition:all .2s; text-align:center; }
 .prod-card:hover { border-color:var(--accent); background:#f0fff4; }
 .prod-card .pname { font-size:12px; font-weight:600; margin-bottom:4px; }
 .prod-card .pprice { font-family:'JetBrains Mono',monospace; font-size:14px; color:var(--accent); font-weight:600; }
@@ -157,81 +113,69 @@ tr:hover td { background:#fafaf8; }
 .pay-btn { padding:10px; border-radius:8px; border:2px solid var(--border); background:white; cursor:pointer; font-size:11px; font-weight:600; transition:all .2s; }
 .pay-btn.selected { border-color:var(--accent); background:#f0fff4; color:var(--accent); }
 
-/* SCANNER CAM */
 #scannerCam { position:relative; width:100%; height:200px; border-radius:10px; overflow:hidden; background:#000; margin-bottom:12px; display:none; }
 #scannerCam video { width:100%; height:100%; object-fit:cover; }
 #scannerCam canvas { position:absolute; top:0; left:0; }
 
-/* ALERT */
 .alert { padding:12px 16px; border-radius:10px; font-size:13px; margin-bottom:12px; }
 .alert-success { background:#d8f3dc; color:#2d6a4f; }
 .alert-error { background:#ffe0dc; color:#e63946; }
 .alert-warn { background:#fff3cd; color:#856404; }
-
-/* STOCK LOW */
 .stock-low { color:var(--danger); font-weight:700; }
 .stock-ok { color:var(--success); }
 
-/* CAJEROS MONITOREO */
-.cajero-card {
-  background:white; border-radius:14px; border:1px solid var(--border);
-  padding:20px; display:flex; align-items:center; justify-content:space-between; gap:16px;
-  margin-bottom:12px;
-}
+.cajero-card { background:white; border-radius:14px; border:1px solid var(--border); padding:20px; display:flex; align-items:center; justify-content:space-between; gap:16px; margin-bottom:12px; }
 .cajero-info { flex:1; }
 .cajero-nombre { font-weight:700; font-size:15px; margin-bottom:4px; }
-.cajero-stats { display:flex; gap:16px; font-size:12px; color:var(--muted); font-family:'JetBrains Mono',monospace; }
-.cajero-total { font-family:'Syne',sans-serif; font-size:22px; font-weight:800; color:var(--accent); }
+.cajero-stats { display:flex; gap:12px; font-size:12px; color:var(--muted); font-family:'JetBrains Mono',monospace; flex-wrap:wrap; }
+.cajero-total { font-family:'Syne',sans-serif; font-size:22px; font-weight:800; color:var(--accent); white-space:nowrap; }
 .alerta-card { padding:12px 16px; border-radius:10px; font-size:13px; margin-bottom:8px; display:flex; align-items:center; gap:8px; }
 .alerta-warning { background:#fff3cd; color:#856404; border-left:4px solid var(--warn); }
 .alerta-danger { background:#ffe0dc; color:#e63946; border-left:4px solid var(--danger); }
 
-/* RESPONSIVE */
+.export-grid { display:grid; grid-template-columns:repeat(2,1fr); gap:16px; margin-bottom:24px; }
+.export-card { background:white; border-radius:14px; border:1px solid var(--border); padding:24px; }
+.export-card h3 { font-family:'Syne',sans-serif; font-size:16px; font-weight:700; margin-bottom:6px; }
+.export-card p { font-size:13px; color:var(--muted); margin-bottom:16px; }
+
 @media(max-width:768px) {
   .sidebar { width:60px; }
   .nav-item span, .sidebar-logo, .sidebar-section, .sidebar-user .name, .sidebar-user .role { display:none; }
   .main { margin-left:60px; padding:16px; }
   .stats-grid { grid-template-columns:repeat(2,1fr); }
   .pos-layout { grid-template-columns:1fr; }
+  .export-grid { grid-template-columns:1fr; }
 }
 </style>
 </head>
 <body>
 
-<!-- LOGIN -->
 <div id="loginScreen">
   <div class="login-box">
     <div class="login-logo">Tienda<span>OS</span></div>
     <div class="login-sub">Sistema de gestión de inventario</div>
     <div id="loginAlert"></div>
-    <div class="form-group">
-      <label>Correo electrónico</label>
-      <input type="email" id="loginEmail" placeholder="correo@tienda.com" value="dueno@tienda.com">
-    </div>
-    <div class="form-group">
-      <label>Contraseña</label>
-      <input type="password" id="loginPassword" placeholder="••••••••" value="dueno123">
-    </div>
-    <button class="btn btn-primary" onclick="login()">Entrar al sistema</button>
+    <div class="form-group"><label>Correo electrónico</label><input type="email" id="loginEmail" placeholder="correo@tienda.com" value="dueno@tienda.com"></div>
+    <div class="form-group"><label>Contraseña</label><input type="password" id="loginPassword" placeholder="••••••••" value="dueno123"></div>
+    <button class="btn btn-primary btn-full" onclick="login()">Entrar al sistema</button>
   </div>
 </div>
 
-<!-- APP -->
 <div id="app">
   <div class="layout">
-    <!-- SIDEBAR -->
     <nav class="sidebar">
       <div class="sidebar-logo">Tienda<span>OS</span></div>
       <div class="sidebar-section">Principal</div>
-      <div class="nav-item active" onclick="showPage('dashboard', this)"><span class="icon">📊</span><span>Dashboard</span></div>
-      <div class="nav-item" onclick="showPage('pos', this)"><span class="icon">🛒</span><span>Punto de Venta</span></div>
+      <div class="nav-item active" onclick="showPage('dashboard',this)"><span class="icon">📊</span><span>Dashboard</span></div>
+      <div class="nav-item" onclick="showPage('pos',this)"><span class="icon">🛒</span><span>Punto de Venta</span></div>
       <div class="sidebar-section">Gestión</div>
-      <div class="nav-item" onclick="showPage('inventario', this)"><span class="icon">📦</span><span>Inventario</span></div>
-      <div class="nav-item" onclick="showPage('ventas', this)"><span class="icon">💰</span><span>Ventas</span></div>
-      <div class="nav-item" onclick="showPage('corte', this)"><span class="icon">🧾</span><span>Corte de Caja</span></div>
+      <div class="nav-item" onclick="showPage('inventario',this)"><span class="icon">📦</span><span>Inventario</span></div>
+      <div class="nav-item" onclick="showPage('ventas',this)"><span class="icon">💰</span><span>Ventas</span></div>
+      <div class="nav-item" onclick="showPage('corte',this)"><span class="icon">🧾</span><span>Corte de Caja</span></div>
       <div class="sidebar-section" id="sectionAdmin" style="display:none">Admin</div>
-      <div class="nav-item" id="navUsuarios" style="display:none" onclick="showPage('usuarios', this)"><span class="icon">👥</span><span>Usuarios</span></div>
-      <div class="nav-item" id="navCajeros" style="display:none" onclick="showPage('cajeros', this)"><span class="icon">🔍</span><span>Monitoreo</span></div>
+      <div class="nav-item" id="navUsuarios" style="display:none" onclick="showPage('usuarios',this)"><span class="icon">👥</span><span>Usuarios</span></div>
+      <div class="nav-item" id="navCajeros" style="display:none" onclick="showPage('cajeros',this)"><span class="icon">🔍</span><span>Monitoreo</span></div>
+      <div class="nav-item" id="navExportar" style="display:none" onclick="showPage('exportar',this)"><span class="icon">📥</span><span>Exportar</span></div>
       <div class="sidebar-user">
         <div class="name" id="sidebarName">—</div>
         <div class="role" id="sidebarRole">—</div>
@@ -239,7 +183,6 @@ tr:hover td { background:#fafaf8; }
       </div>
     </nav>
 
-    <!-- MAIN -->
     <main class="main">
 
       <!-- DASHBOARD -->
@@ -248,40 +191,21 @@ tr:hover td { background:#fafaf8; }
         <div class="page-sub" id="dashFecha">—</div>
         <div id="dashAlertasActividad" style="margin-bottom:16px"></div>
         <div class="stats-grid">
-          <div class="stat-card" style="--accent-color:#2d6a4f">
-            <div class="stat-label">Ventas Hoy</div>
-            <div class="stat-value" id="dashVentasNum">0</div>
-            <div class="stat-desc">transacciones</div>
-          </div>
-          <div class="stat-card" style="--accent-color:#40916c">
-            <div class="stat-label">Total Hoy</div>
-            <div class="stat-value" id="dashVentasTotal">$0</div>
-            <div class="stat-desc">en ventas</div>
-          </div>
-          <div class="stat-card" style="--accent-color:#e76f51">
-            <div class="stat-label">Productos</div>
-            <div class="stat-value" id="dashProductos">0</div>
-            <div class="stat-desc">en catálogo</div>
-          </div>
-          <div class="stat-card" style="--accent-color:#e63946">
-            <div class="stat-label">Stock Bajo</div>
-            <div class="stat-value" id="dashBajoStock">0</div>
-            <div class="stat-desc">productos</div>
-          </div>
+          <div class="stat-card" style="--accent-color:#2d6a4f"><div class="stat-label">Ventas Hoy</div><div class="stat-value" id="dashVentasNum">0</div><div class="stat-desc">transacciones</div></div>
+          <div class="stat-card" style="--accent-color:#40916c"><div class="stat-label">Total Hoy</div><div class="stat-value" id="dashVentasTotal">$0</div><div class="stat-desc">en ventas</div></div>
+          <div class="stat-card" style="--accent-color:#e76f51"><div class="stat-label">Productos</div><div class="stat-value" id="dashProductos">0</div><div class="stat-desc">en catálogo</div></div>
+          <div class="stat-card" style="--accent-color:#e63946"><div class="stat-label">Stock Bajo</div><div class="stat-value" id="dashBajoStock">0</div><div class="stat-desc">productos</div></div>
         </div>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px">
           <div class="table-card">
             <div class="table-header"><span class="table-title">Últimas Ventas</span></div>
-            <table><thead><tr><th>Folio</th><th>Cajero</th><th>Total</th></tr></thead>
-            <tbody id="dashUltimasVentas"></tbody></table>
+            <table><thead><tr><th>Folio</th><th>Cajero</th><th>Total</th></tr></thead><tbody id="dashUltimasVentas"></tbody></table>
           </div>
           <div class="table-card">
             <div class="table-header"><span class="table-title">⚠️ Alertas de Stock</span></div>
-            <table><thead><tr><th>Producto</th><th>Stock</th><th>Mínimo</th></tr></thead>
-            <tbody id="dashAlertas"></tbody></table>
+            <table><thead><tr><th>Producto</th><th>Stock</th><th>Mínimo</th></tr></thead><tbody id="dashAlertas"></tbody></table>
           </div>
         </div>
-        <!-- CAJEROS HOY -->
         <div id="dashCajerosSection" style="display:none;margin-top:20px">
           <div style="font-family:'Syne',sans-serif;font-size:18px;font-weight:800;margin-bottom:16px">👥 Actividad de Cajeros Hoy</div>
           <div id="dashCajeros"></div>
@@ -297,12 +221,9 @@ tr:hover td { background:#fafaf8; }
             <div class="scanner-bar">
               <input class="scanner-input" id="scanInput" placeholder="Escanear código o buscar..." onkeypress="scanEnter(event)" autofocus>
               <button class="btn btn-secondary" onclick="toggleCam()">📷 Cámara</button>
-              <button class="btn btn-secondary" onclick="loadProductos()">🔄</button>
+              <button class="btn btn-secondary" onclick="loadProductosPos()">🔄</button>
             </div>
-            <div id="scannerCam">
-              <video id="scanVideo"></video>
-              <canvas id="scanCanvas"></canvas>
-            </div>
+            <div id="scannerCam"><video id="scanVideo"></video><canvas id="scanCanvas"></canvas></div>
             <div id="posAlert"></div>
             <div class="prod-grid" id="posProductos"></div>
           </div>
@@ -319,8 +240,8 @@ tr:hover td { background:#fafaf8; }
                 <button class="pay-btn" id="pay-tarjeta" onclick="selectPago('tarjeta')">💳 Tarjeta</button>
                 <button class="pay-btn" id="pay-transferencia" onclick="selectPago('transferencia')">📱 Transfer.</button>
               </div>
-              <button class="btn btn-primary" style="width:100%;margin-top:12px;font-size:16px" onclick="cobrar()">✅ COBRAR</button>
-              <button class="btn btn-secondary" style="width:100%;margin-top:8px" onclick="limpiarCarrito()">🗑 Limpiar</button>
+              <button class="btn btn-primary btn-full" style="margin-top:12px;font-size:16px" onclick="cobrar()">✅ COBRAR</button>
+              <button class="btn btn-secondary btn-full" style="margin-top:8px" onclick="limpiarCarrito()">🗑 Limpiar</button>
             </div>
           </div>
         </div>
@@ -334,20 +255,14 @@ tr:hover td { background:#fafaf8; }
           <input class="search-input" id="invBuscar" placeholder="Buscar por nombre o código..." oninput="loadInventario()">
           <select id="invCategoria" onchange="loadInventario()" style="padding:10px;border:2px solid var(--border);border-radius:10px;font-family:'Nunito',sans-serif">
             <option value="">Todas las categorías</option>
-            <option>Abarrotes</option><option>Bebidas</option><option>Lácteos</option>
-            <option>Carnes</option><option>Frutas y Verduras</option><option>Limpieza</option>
-            <option>Cuidado Personal</option><option>Botanas</option><option>General</option>
+            <option>Abarrotes</option><option>Bebidas</option><option>Lácteos</option><option>Carnes</option>
+            <option>Frutas y Verduras</option><option>Limpieza</option><option>Cuidado Personal</option><option>Botanas</option><option>General</option>
           </select>
-          <label style="display:flex;align-items:center;gap:6px;font-size:13px">
-            <input type="checkbox" id="invBajoStock" onchange="loadInventario()"> Solo bajo stock
-          </label>
+          <label style="display:flex;align-items:center;gap:6px;font-size:13px"><input type="checkbox" id="invBajoStock" onchange="loadInventario()"> Solo bajo stock</label>
           <button class="btn btn-primary" onclick="nuevoProducto()">+ Nuevo Producto</button>
         </div>
         <div class="table-card">
-          <table>
-            <thead><tr><th>Código</th><th>Nombre</th><th>Categoría</th><th>Precio</th><th>Stock</th><th>Mínimo</th><th>Acciones</th></tr></thead>
-            <tbody id="invTable"></tbody>
-          </table>
+          <table><thead><tr><th>Código</th><th>Nombre</th><th>Categoría</th><th>Precio</th><th>Stock</th><th>Mínimo</th><th>Acciones</th></tr></thead><tbody id="invTable"></tbody></table>
         </div>
       </div>
 
@@ -361,10 +276,7 @@ tr:hover td { background:#fafaf8; }
           <button class="btn btn-secondary" onclick="resetVentasFiltro()">Hoy</button>
         </div>
         <div class="table-card">
-          <table>
-            <thead><tr><th>Folio</th><th>Fecha</th><th>Cajero</th><th>Pago</th><th>Total</th><th>Ver</th></tr></thead>
-            <tbody id="ventasTable"></tbody>
-          </table>
+          <table><thead><tr><th>Folio</th><th>Fecha</th><th>Cajero</th><th>Pago</th><th>Total</th><th>Ver</th></tr></thead><tbody id="ventasTable"></tbody></table>
         </div>
       </div>
 
@@ -373,21 +285,14 @@ tr:hover td { background:#fafaf8; }
         <div class="page-title">Corte de Caja</div>
         <div class="page-sub">Cierre y resumen de ventas</div>
         <div class="table-card" style="padding:28px;max-width:500px">
-          <div class="form-group">
-            <label>Desde (fecha y hora)</label>
-            <input type="datetime-local" id="corteDesde">
-          </div>
-          <div class="form-group">
-            <label>Notas del corte</label>
-            <textarea id="corteNotas" rows="3" style="width:100%;padding:12px;border:2px solid var(--border);border-radius:10px;font-family:'Nunito',sans-serif;resize:vertical"></textarea>
-          </div>
-          <button class="btn btn-primary" style="width:100%" onclick="hacerCorte()">🧾 Generar Corte</button>
+          <div class="form-group"><label>Desde (fecha y hora)</label><input type="datetime-local" id="corteDesde"></div>
+          <div class="form-group"><label>Notas del corte</label><textarea id="corteNotas" rows="3" style="width:100%;padding:12px;border:2px solid var(--border);border-radius:10px;font-family:'Nunito',sans-serif;resize:vertical"></textarea></div>
+          <button class="btn btn-primary btn-full" onclick="hacerCorte()">🧾 Generar Corte</button>
         </div>
-        <div id="corteResultado" style="display:none" class="table-card" style="max-width:500px;margin-top:20px;padding:28px"></div>
+        <div id="corteResultado" style="display:none" class="table-card"></div>
         <div class="table-card" style="margin-top:20px">
           <div class="table-header"><span class="table-title">Historial de Cortes</span></div>
-          <table><thead><tr><th>Fecha</th><th>Cajero</th><th>Ventas</th><th>Efectivo</th><th>Tarjeta</th><th>Total</th></tr></thead>
-          <tbody id="cortesTable"></tbody></table>
+          <table><thead><tr><th>Fecha</th><th>Cajero</th><th>Ventas</th><th>Efectivo</th><th>Tarjeta</th><th>Total</th></tr></thead><tbody id="cortesTable"></tbody></table>
         </div>
       </div>
 
@@ -397,10 +302,7 @@ tr:hover td { background:#fafaf8; }
         <div class="page-sub">Solo visible para el dueño</div>
         <div style="margin-bottom:16px"><button class="btn btn-primary" onclick="openModal('modalUsuario')">+ Nuevo Usuario</button></div>
         <div class="table-card">
-          <table>
-            <thead><tr><th>Nombre</th><th>Email</th><th>Rol</th><th>Estado</th><th>Acción</th></tr></thead>
-            <tbody id="usuariosTable"></tbody>
-          </table>
+          <table><thead><tr><th>Nombre</th><th>Email</th><th>Rol</th><th>Estado</th><th>Acción</th></tr></thead><tbody id="usuariosTable"></tbody></table>
         </div>
       </div>
 
@@ -416,11 +318,57 @@ tr:hover td { background:#fafaf8; }
         <div id="cajerosLista"></div>
       </div>
 
+      <!-- EXPORTAR -->
+      <div class="page" id="page-exportar">
+        <div class="page-title">Exportar a Excel</div>
+        <div class="page-sub">Descarga tu información en formato CSV (compatible con Excel y Google Sheets)</div>
+
+        <div class="table-card" style="padding:20px;margin-bottom:20px">
+          <div style="font-weight:700;margin-bottom:12px">Filtrar por fecha (aplica a ventas y detalle)</div>
+          <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap">
+            <div class="form-group" style="margin:0"><label>Desde</label><input type="date" id="exportDesde" style="padding:10px;border:2px solid var(--border);border-radius:10px"></div>
+            <div class="form-group" style="margin:0"><label>Hasta</label><input type="date" id="exportHasta" style="padding:10px;border:2px solid var(--border);border-radius:10px"></div>
+            <button class="btn btn-secondary" style="margin-top:18px" onclick="setExportHoy()">Solo hoy</button>
+            <button class="btn btn-secondary" style="margin-top:18px" onclick="setExportMes()">Este mes</button>
+            <button class="btn btn-secondary" style="margin-top:18px" onclick="clearExportFechas()">Todo</button>
+          </div>
+        </div>
+
+        <div class="export-grid">
+          <div class="export-card">
+            <h3>💰 Ventas</h3>
+            <p>Folio, fecha, cajero, método de pago, descuento y total de cada venta.</p>
+            <button class="btn btn-primary" onclick="exportar('ventas')">⬇️ Descargar Ventas</button>
+          </div>
+          <div class="export-card">
+            <h3>🧾 Detalle de Productos Vendidos</h3>
+            <p>Qué productos se vendieron en cada venta, cantidad y precio unitario.</p>
+            <button class="btn btn-primary" onclick="exportar('detalle-ventas')">⬇️ Descargar Detalle</button>
+          </div>
+          <div class="export-card">
+            <h3>📦 Inventario Actual</h3>
+            <p>Lista completa de productos con precios, stock actual y mínimo.</p>
+            <button class="btn btn-primary" onclick="exportar('inventario')">⬇️ Descargar Inventario</button>
+          </div>
+          <div class="export-card">
+            <h3>🧾 Cortes de Caja</h3>
+            <p>Historial de todos los cortes con desglose por método de pago.</p>
+            <button class="btn btn-primary" onclick="exportar('cortes')">⬇️ Descargar Cortes</button>
+          </div>
+        </div>
+
+        <div class="table-card" style="padding:24px">
+          <h3 style="font-family:'Syne',sans-serif;font-size:16px;font-weight:700;margin-bottom:8px">🗄️ Backup de Base de Datos</h3>
+          <p style="font-size:13px;color:var(--muted);margin-bottom:16px">Descarga una copia completa de tu base de datos. Guárdala en un lugar seguro regularmente.</p>
+          <button class="btn btn-danger" onclick="descargarBackup()">⬇️ Descargar Backup Completo</button>
+        </div>
+      </div>
+
     </main>
   </div>
 </div>
 
-<!-- MODAL PRODUCTO -->
+<!-- MODALES -->
 <div class="modal-overlay" id="modalProducto">
   <div class="modal">
     <h2 id="modalProdTitle">Nuevo Producto</h2>
@@ -429,11 +377,7 @@ tr:hover td { background:#fafaf8; }
       <div class="form-group" style="grid-column:1/-1"><label>Código de barras *</label><input id="prodCodigo" placeholder="Escanea o escribe el código"></div>
       <div class="form-group" style="grid-column:1/-1"><label>Nombre del producto *</label><input id="prodNombre" placeholder="Ej: Coca Cola 600ml"></div>
       <div class="form-group"><label>Categoría</label>
-        <select id="prodCategoria">
-          <option>Abarrotes</option><option>Bebidas</option><option>Lácteos</option>
-          <option>Carnes</option><option>Frutas y Verduras</option><option>Limpieza</option>
-          <option>Cuidado Personal</option><option>Botanas</option><option>General</option>
-        </select>
+        <select id="prodCategoria"><option>Abarrotes</option><option>Bebidas</option><option>Lácteos</option><option>Carnes</option><option>Frutas y Verduras</option><option>Limpieza</option><option>Cuidado Personal</option><option>Botanas</option><option>General</option></select>
       </div>
       <div class="form-group"><label>Unidad</label><input id="prodUnidad" placeholder="pza, kg, lt..." value="pza"></div>
       <div class="form-group"><label>Precio de compra</label><input type="number" id="prodPrecioCompra" placeholder="0.00" step="0.01"></div>
@@ -448,15 +392,12 @@ tr:hover td { background:#fafaf8; }
   </div>
 </div>
 
-<!-- MODAL STOCK -->
 <div class="modal-overlay" id="modalStock">
   <div class="modal">
     <h2>Ajustar Stock</h2>
     <input type="hidden" id="stockProdId">
     <div id="stockProdNombre" style="font-weight:700;margin-bottom:16px;color:var(--accent)"></div>
-    <div class="form-group"><label>Tipo de movimiento</label>
-      <select id="stockTipo"><option value="entrada">Entrada (compra/devolución)</option><option value="salida">Salida (pérdida/merma)</option></select>
-    </div>
+    <div class="form-group"><label>Tipo de movimiento</label><select id="stockTipo"><option value="entrada">Entrada (compra/devolución)</option><option value="salida">Salida (pérdida/merma)</option></select></div>
     <div class="form-group"><label>Cantidad</label><input type="number" id="stockCantidad" min="1" value="1"></div>
     <div class="form-group"><label>Nota</label><input id="stockNota" placeholder="Motivo del movimiento"></div>
     <div class="modal-footer">
@@ -466,7 +407,6 @@ tr:hover td { background:#fafaf8; }
   </div>
 </div>
 
-<!-- MODAL VENTA DETALLE -->
 <div class="modal-overlay" id="modalVenta">
   <div class="modal">
     <h2 id="modalVentaTitle">Detalle de Venta</h2>
@@ -475,16 +415,13 @@ tr:hover td { background:#fafaf8; }
   </div>
 </div>
 
-<!-- MODAL USUARIO -->
 <div class="modal-overlay" id="modalUsuario">
   <div class="modal">
     <h2>Nuevo Usuario</h2>
     <div class="form-group"><label>Nombre completo</label><input id="userNombre" placeholder="Nombre del empleado"></div>
     <div class="form-group"><label>Correo electrónico</label><input type="email" id="userEmail" placeholder="correo@tienda.com"></div>
     <div class="form-group"><label>Contraseña</label><input type="password" id="userPassword" placeholder="Mínimo 6 caracteres"></div>
-    <div class="form-group"><label>Rol</label>
-      <select id="userRol"><option value="admin">Administrador</option><option value="cajero">Cajero</option></select>
-    </div>
+    <div class="form-group"><label>Rol</label><select id="userRol"><option value="admin">Administrador</option><option value="cajero">Cajero</option></select></div>
     <div class="modal-footer">
       <button class="btn btn-secondary" onclick="closeModal('modalUsuario')">Cancelar</button>
       <button class="btn btn-primary" onclick="guardarUsuario()">Crear Usuario</button>
@@ -496,12 +433,8 @@ tr:hover td { background:#fafaf8; }
 const API = '';
 let token = localStorage.getItem('token');
 let user = JSON.parse(localStorage.getItem('user') || 'null');
-let carrito = [];
-let metodoPago = 'efectivo';
-let camActiva = false;
-let productosCache = [];
+let carrito = [], metodoPago = 'efectivo', camActiva = false, productosCache = [];
 
-// ===== API HELPER =====
 async function api(method, path, body) {
   const res = await fetch(API + '/api' + path, {
     method, headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
@@ -512,23 +445,17 @@ async function api(method, path, body) {
   return data;
 }
 
-// ===== AUTH =====
 async function login() {
   const email = document.getElementById('loginEmail').value;
   const password = document.getElementById('loginPassword').value;
   try {
-    const data = await fetch(API + '/api/auth/login', {
-      method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email, password })
-    }).then(r => r.json());
+    const data = await fetch(API + '/api/auth/login', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({email,password}) }).then(r=>r.json());
     if (data.error) throw new Error(data.error);
     token = data.token; user = data.user;
     localStorage.setItem('token', token);
     localStorage.setItem('user', JSON.stringify(user));
     initApp();
-  } catch (e) {
-    document.getElementById('loginAlert').innerHTML = `<div class="alert alert-error">${e.message}</div>`;
-  }
+  } catch(e) { document.getElementById('loginAlert').innerHTML = `<div class="alert alert-error">${e.message}</div>`; }
 }
 
 function logout() {
@@ -547,16 +474,16 @@ function initApp() {
     document.getElementById('sectionAdmin').style.display = 'block';
     document.getElementById('navUsuarios').style.display = 'flex';
     document.getElementById('navCajeros').style.display = 'flex';
+    document.getElementById('navExportar').style.display = 'flex';
     document.getElementById('dashCajerosSection').style.display = 'block';
   }
-  document.getElementById('dashFecha').textContent = new Date().toLocaleDateString('es-MX', { weekday:'long', year:'numeric', month:'long', day:'numeric' });
+  document.getElementById('dashFecha').textContent = new Date().toLocaleDateString('es-MX', {weekday:'long',year:'numeric',month:'long',day:'numeric'});
   const hoy = new Date().toISOString().split('T')[0];
   document.getElementById('corteDesde').value = hoy + 'T00:00';
   loadDashboard();
   loadProductosPos();
 }
 
-// ===== NAVIGATION =====
 function showPage(page, el) {
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
   document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
@@ -567,9 +494,9 @@ function showPage(page, el) {
   if (page === 'corte') loadCortes();
   if (page === 'usuarios') loadUsuarios();
   if (page === 'cajeros') { setCajeroHoy(); loadCajerosActividad(); }
+  if (page === 'exportar') setExportHoy();
 }
 
-// ===== DASHBOARD =====
 async function loadDashboard() {
   try {
     const d = await api('GET', '/dashboard');
@@ -583,79 +510,50 @@ async function loadDashboard() {
     document.getElementById('dashAlertas').innerHTML = d.alertas.map(p =>
       `<tr><td>${p.nombre}</td><td class="stock-low">${p.stock}</td><td>${p.stock_minimo}</td></tr>`
     ).join('') || '<tr><td colspan="3" style="color:var(--success);text-align:center">✅ Todo en orden</td></tr>';
-
-    // Alertas de actividad inusual
-    if (d.alertas_actividad && d.alertas_actividad.length > 0) {
+    if (d.alertas_actividad?.length > 0) {
       document.getElementById('dashAlertasActividad').innerHTML = d.alertas_actividad.map(a =>
-        `<div class="alerta-card alerta-${a.tipo}">⚠️ ${a.mensaje}</div>`
-      ).join('');
+        `<div class="alerta-card alerta-${a.tipo}">⚠️ ${a.mensaje}</div>`).join('');
     }
-
-    // Cajeros hoy (solo dueño)
-    if (user && user.rol === 'dueno' && d.actividad_cajeros) {
+    if (user?.rol === 'dueno' && d.actividad_cajeros) {
       document.getElementById('dashCajeros').innerHTML = d.actividad_cajeros.map(c =>
         `<div class="cajero-card">
           <div class="cajero-info">
-            <div class="cajero-nombre">${c.nombre} <span class="badge ${c.activo ? 'badge-green' : 'badge-red'}">${c.activo ? 'Activo' : 'Bloqueado'}</span></div>
-            <div class="cajero-stats">
-              <span>${c.num_ventas} ventas</span>
-              <span>Última: ${c.ultima_venta ? new Date(c.ultima_venta).toLocaleTimeString('es-MX') : 'Sin actividad'}</span>
-            </div>
+            <div class="cajero-nombre">${c.nombre} <span class="badge ${c.activo?'badge-green':'badge-red'}">${c.activo?'Activo':'Bloqueado'}</span></div>
+            <div class="cajero-stats"><span>${c.num_ventas} ventas</span><span>Última: ${c.ultima_venta?new Date(c.ultima_venta).toLocaleTimeString('es-MX'):'Sin actividad'}</span></div>
           </div>
           <div class="cajero-total">$${(c.total_vendido||0).toFixed(2)}</div>
-          ${c.activo
-            ? `<button class="btn btn-danger btn-sm" onclick="bloquearCajero(${c.id}, '${c.nombre}')">🚫 Bloquear</button>`
-            : `<button class="btn btn-primary btn-sm" onclick="activarCajero(${c.id}, '${c.nombre}')">✅ Activar</button>`
-          }
-        </div>`
-      ).join('') || '<div style="color:var(--muted);font-size:13px">Sin empleados registrados</div>';
+          ${c.activo?`<button class="btn btn-danger btn-sm" onclick="toggleCajero(${c.id},'${c.nombre}',true)">🚫 Bloquear</button>`:`<button class="btn btn-primary btn-sm" onclick="toggleCajero(${c.id},'${c.nombre}',false)">✅ Activar</button>`}
+        </div>`).join('') || '<div style="color:var(--muted);font-size:13px">Sin empleados registrados</div>';
     }
   } catch(e) { console.error(e); }
 }
 
-async function bloquearCajero(id, nombre) {
-  if (!confirm(`¿Bloquear acceso a ${nombre}? Ya no podrá entrar al sistema.`)) return;
-  try {
-    await api('PATCH', '/usuarios/' + id + '/toggle');
-    loadDashboard();
-  } catch(e) { alert(e.message); }
+async function toggleCajero(id, nombre, bloquear) {
+  if (bloquear && !confirm(`¿Bloquear acceso a ${nombre}?`)) return;
+  try { await api('PATCH', '/usuarios/' + id + '/toggle'); loadDashboard(); }
+  catch(e) { alert(e.message); }
 }
 
-async function activarCajero(id, nombre) {
-  try {
-    await api('PATCH', '/usuarios/' + id + '/toggle');
-    loadDashboard();
-  } catch(e) { alert(e.message); }
-}
-
-// ===== POS =====
 async function loadProductosPos() {
-  try {
-    productosCache = await api('GET', '/productos');
-    renderPosProductos(productosCache);
-  } catch(e) {}
+  try { productosCache = await api('GET', '/productos'); renderPosProductos(productosCache); } catch(e) {}
 }
-
-async function loadProductos() { await loadProductosPos(); }
 
 function renderPosProductos(prods) {
   document.getElementById('posProductos').innerHTML = prods.slice(0,50).map(p =>
     `<div class="prod-card" onclick="addToCart(${p.id})">
       <div class="pname">${p.nombre}</div>
       <div class="pprice">$${p.precio_venta.toFixed(2)}</div>
-      <div class="pstock ${p.stock <= p.stock_minimo ? 'stock-low' : 'stock-ok'}">${p.stock} ${p.unidad}</div>
-    </div>`
-  ).join('') || '<div style="color:var(--muted);font-size:13px">Sin productos. Agrega desde Inventario.</div>';
+      <div class="pstock ${p.stock<=p.stock_minimo?'stock-low':'stock-ok'}">${p.stock} ${p.unidad}</div>
+    </div>`).join('') || '<div style="color:var(--muted);font-size:13px">Sin productos.</div>';
 }
 
 function scanEnter(e) {
-  if (e.key === 'Enter') {
-    const val = document.getElementById('scanInput').value.trim();
-    if (!val) return;
-    const prod = productosCache.find(p => p.codigo === val || p.nombre.toLowerCase().includes(val.toLowerCase()));
-    if (prod) { addToCart(prod.id); document.getElementById('scanInput').value = ''; }
-    else showPosAlert('Producto no encontrado: ' + val, 'error');
-  }
+  if (e.key !== 'Enter') return;
+  const val = document.getElementById('scanInput').value.trim();
+  if (!val) return;
+  const prod = productosCache.find(p => p.codigo === val || p.nombre.toLowerCase().includes(val.toLowerCase()));
+  if (prod) { addToCart(prod.id); document.getElementById('scanInput').value = ''; }
+  else showPosAlert('Producto no encontrado: ' + val, 'error');
 }
 
 function addToCart(prodId) {
@@ -663,12 +561,8 @@ function addToCart(prodId) {
   if (!prod) return;
   if (prod.stock <= 0) return showPosAlert('Sin stock: ' + prod.nombre, 'error');
   const exist = carrito.find(c => c.producto_id === prodId);
-  if (exist) {
-    if (exist.cantidad >= prod.stock) return showPosAlert('Stock máximo alcanzado', 'warn');
-    exist.cantidad++;
-  } else {
-    carrito.push({ producto_id: prodId, nombre: prod.nombre, precio: prod.precio_venta, cantidad: 1, stock: prod.stock });
-  }
+  if (exist) { if (exist.cantidad >= prod.stock) return showPosAlert('Stock máximo', 'warn'); exist.cantidad++; }
+  else carrito.push({ producto_id:prodId, nombre:prod.nombre, precio:prod.precio_venta, cantidad:1, stock:prod.stock });
   renderCart();
 }
 
@@ -679,117 +573,95 @@ function renderCart() {
     document.getElementById('cartTotal').textContent = '$0.00';
     return;
   }
-  document.getElementById('cartItems').innerHTML = carrito.map((c, i) =>
+  document.getElementById('cartItems').innerHTML = carrito.map((c,i) =>
     `<div class="cart-item">
       <div><div class="cart-item-name">${c.nombre}</div><div class="cart-item-price">$${c.precio.toFixed(2)} c/u</div></div>
-      <div class="qty-ctrl">
-        <button class="qty-btn" onclick="changeQty(${i},-1)">−</button>
-        <span class="qty-num">${c.cantidad}</span>
-        <button class="qty-btn" onclick="changeQty(${i},1)">+</button>
-      </div>
+      <div class="qty-ctrl"><button class="qty-btn" onclick="changeQty(${i},-1)">−</button><span class="qty-num">${c.cantidad}</span><button class="qty-btn" onclick="changeQty(${i},1)">+</button></div>
       <div style="font-family:'JetBrains Mono',monospace;font-size:13px;font-weight:700;min-width:60px;text-align:right">$${(c.precio*c.cantidad).toFixed(2)}</div>
       <button onclick="removeFromCart(${i})" style="background:none;border:none;cursor:pointer;color:var(--danger);font-size:16px">✕</button>
-    </div>`
-  ).join('');
-  const sub = carrito.reduce((s, c) => s + c.precio * c.cantidad, 0);
+    </div>`).join('');
+  const sub = carrito.reduce((s,c) => s+c.precio*c.cantidad, 0);
   const desc = parseFloat(document.getElementById('cartDescuento').value) || 0;
   document.getElementById('cartSubtotal').textContent = '$' + sub.toFixed(2);
-  document.getElementById('cartTotal').textContent = '$' + (sub - desc).toFixed(2);
+  document.getElementById('cartTotal').textContent = '$' + (sub-desc).toFixed(2);
 }
 
-function changeQty(i, delta) {
-  carrito[i].cantidad += delta;
-  if (carrito[i].cantidad <= 0) carrito.splice(i, 1);
-  renderCart();
-}
-function removeFromCart(i) { carrito.splice(i, 1); renderCart(); }
-function limpiarCarrito() { carrito = []; renderCart(); }
-function selectPago(m) {
-  metodoPago = m;
-  document.querySelectorAll('.pay-btn').forEach(b => b.classList.remove('selected'));
-  document.getElementById('pay-' + m).classList.add('selected');
-}
+function changeQty(i,delta) { carrito[i].cantidad+=delta; if(carrito[i].cantidad<=0) carrito.splice(i,1); renderCart(); }
+function removeFromCart(i) { carrito.splice(i,1); renderCart(); }
+function limpiarCarrito() { carrito=[]; renderCart(); }
+function selectPago(m) { metodoPago=m; document.querySelectorAll('.pay-btn').forEach(b=>b.classList.remove('selected')); document.getElementById('pay-'+m).classList.add('selected'); }
 
 async function cobrar() {
   if (!carrito.length) return showPosAlert('Carrito vacío', 'warn');
   const desc = parseFloat(document.getElementById('cartDescuento').value) || 0;
   try {
-    const items = carrito.map(c => ({ producto_id: c.producto_id, cantidad: c.cantidad }));
-    const r = await api('POST', '/ventas', { items, metodo_pago: metodoPago, descuento: desc });
-    showPosAlert(`✅ Venta ${r.folio} — Total: $${r.total.toFixed(2)}`, 'success');
-    limpiarCarrito();
-    await loadProductosPos();
-    loadDashboard();
+    const r = await api('POST', '/ventas', { items:carrito.map(c=>({producto_id:c.producto_id,cantidad:c.cantidad})), metodo_pago:metodoPago, descuento:desc });
+    showPosAlert(`✅ Venta ${r.folio} — $${r.total.toFixed(2)}`, 'success');
+    limpiarCarrito(); await loadProductosPos(); loadDashboard();
   } catch(e) { showPosAlert(e.message, 'error'); }
 }
 
-function showPosAlert(msg, type) {
+function showPosAlert(msg,type) {
   const el = document.getElementById('posAlert');
   el.innerHTML = `<div class="alert alert-${type}">${msg}</div>`;
-  setTimeout(() => el.innerHTML = '', 3000);
+  setTimeout(()=>el.innerHTML='',3000);
 }
 
 function toggleCam() {
   const cam = document.getElementById('scannerCam');
-  if (camActiva) {
-    Quagga.stop(); cam.style.display = 'none'; camActiva = false;
-  } else {
-    cam.style.display = 'block';
-    Quagga.init({ inputStream: { type:'LiveStream', target: document.getElementById('scannerCam'), constraints: { facingMode:'environment' } },
-      decoder: { readers: ['ean_reader','code_128_reader','upc_reader'] } }, err => {
-      if (err) return;
-      Quagga.start(); camActiva = true;
+  if (camActiva) { Quagga.stop(); cam.style.display='none'; camActiva=false; }
+  else {
+    cam.style.display='block';
+    Quagga.init({inputStream:{type:'LiveStream',target:document.getElementById('scannerCam'),constraints:{facingMode:'environment'}},decoder:{readers:['ean_reader','code_128_reader','upc_reader']}},err=>{
+      if(err) return; Quagga.start(); camActiva=true;
     });
-    Quagga.onDetected(result => {
-      const code = result.codeResult.code;
-      document.getElementById('scanInput').value = code;
-      const prod = productosCache.find(p => p.codigo === code);
-      if (prod) { addToCart(prod.id); document.getElementById('scanInput').value = ''; }
-      else showPosAlert('Código no registrado: ' + code, 'warn');
+    Quagga.onDetected(result=>{
+      const code=result.codeResult.code;
+      document.getElementById('scanInput').value=code;
+      const prod=productosCache.find(p=>p.codigo===code);
+      if(prod){addToCart(prod.id);document.getElementById('scanInput').value='';}
+      else showPosAlert('Código no registrado: '+code,'warn');
     });
   }
 }
 
-// ===== INVENTARIO =====
 async function loadInventario() {
-  const buscar = document.getElementById('invBuscar').value;
-  const categoria = document.getElementById('invCategoria').value;
-  const bajo_stock = document.getElementById('invBajoStock').checked ? '1' : '';
-  let qs = new URLSearchParams();
-  if (buscar) qs.set('buscar', buscar);
-  if (categoria) qs.set('categoria', categoria);
-  if (bajo_stock) qs.set('bajo_stock', '1');
-  const prods = await api('GET', '/productos?' + qs.toString());
-  productosCache = prods;
-  document.getElementById('invTable').innerHTML = prods.map(p =>
+  const buscar=document.getElementById('invBuscar').value;
+  const categoria=document.getElementById('invCategoria').value;
+  const bajo_stock=document.getElementById('invBajoStock').checked?'1':'';
+  let qs=new URLSearchParams();
+  if(buscar) qs.set('buscar',buscar);
+  if(categoria) qs.set('categoria',categoria);
+  if(bajo_stock) qs.set('bajo_stock','1');
+  const prods=await api('GET','/productos?'+qs.toString());
+  productosCache=prods;
+  document.getElementById('invTable').innerHTML=prods.map(p=>
     `<tr>
       <td style="font-family:'JetBrains Mono',monospace">${p.codigo}</td>
       <td style="font-weight:600">${p.nombre}</td>
       <td><span class="badge badge-blue">${p.categoria}</span></td>
       <td style="font-family:'JetBrains Mono',monospace">$${p.precio_venta.toFixed(2)}</td>
-      <td class="${p.stock <= p.stock_minimo ? 'stock-low' : 'stock-ok'}" style="font-weight:700">${p.stock} ${p.unidad}</td>
+      <td class="${p.stock<=p.stock_minimo?'stock-low':'stock-ok'}" style="font-weight:700">${p.stock} ${p.unidad}</td>
       <td>${p.stock_minimo}</td>
       <td style="display:flex;gap:6px">
         <button class="btn btn-secondary btn-sm" onclick="editarProducto(${p.id})">✏️</button>
-        <button class="btn btn-secondary btn-sm" onclick="abrirStock(${p.id},'${p.nombre}')">📦</button>
+        <button class="btn btn-secondary btn-sm" onclick="abrirStock(${p.id},'${p.nombre.replace(/'/g,"\\'")}')">📦</button>
         ${user.rol==='dueno'?`<button class="btn btn-danger btn-sm" onclick="eliminarProducto(${p.id})">🗑</button>`:''}
       </td>
-    </tr>`
-  ).join('') || '<tr><td colspan="7" style="text-align:center;color:var(--muted);padding:20px">Sin productos</td></tr>';
+    </tr>`).join('') || '<tr><td colspan="7" style="text-align:center;color:var(--muted);padding:20px">Sin productos</td></tr>';
 }
 
-// ✅ FIX: función separada para nuevo producto que limpia el formulario
 function nuevoProducto() {
-  document.getElementById('prodId').value = '';
-  document.getElementById('prodCodigo').value = '';
-  document.getElementById('prodNombre').value = '';
-  document.getElementById('prodCategoria').value = 'General';
-  document.getElementById('prodUnidad').value = 'pza';
-  document.getElementById('prodPrecioCompra').value = '';
-  document.getElementById('prodPrecioVenta').value = '';
-  document.getElementById('prodStock').value = '';
-  document.getElementById('prodStockMin').value = '5';
-  document.getElementById('modalProdTitle').textContent = 'Nuevo Producto';
+  document.getElementById('prodId').value='';
+  document.getElementById('prodCodigo').value='';
+  document.getElementById('prodNombre').value='';
+  document.getElementById('prodCategoria').value='General';
+  document.getElementById('prodUnidad').value='pza';
+  document.getElementById('prodPrecioCompra').value='';
+  document.getElementById('prodPrecioVenta').value='';
+  document.getElementById('prodStock').value='';
+  document.getElementById('prodStockMin').value='5';
+  document.getElementById('modalProdTitle').textContent='Nuevo Producto';
   openModal('modalProducto');
 }
 
@@ -797,91 +669,85 @@ function openModal(id) { document.getElementById(id).classList.add('open'); }
 function closeModal(id) { document.getElementById(id).classList.remove('open'); }
 
 function editarProducto(id) {
-  const p = productosCache.find(p => p.id === id) || {};
-  document.getElementById('prodId').value = id;
-  document.getElementById('prodCodigo').value = p.codigo || '';
-  document.getElementById('prodNombre').value = p.nombre || '';
-  document.getElementById('prodCategoria').value = p.categoria || 'General';
-  document.getElementById('prodUnidad').value = p.unidad || 'pza';
-  document.getElementById('prodPrecioCompra').value = p.precio_compra || 0;
-  document.getElementById('prodPrecioVenta').value = p.precio_venta || '';
-  document.getElementById('prodStock').value = p.stock || 0;
-  document.getElementById('prodStockMin').value = p.stock_minimo || 5;
-  document.getElementById('modalProdTitle').textContent = 'Editar Producto';
+  const p=productosCache.find(p=>p.id===id)||{};
+  document.getElementById('prodId').value=id;
+  document.getElementById('prodCodigo').value=p.codigo||'';
+  document.getElementById('prodNombre').value=p.nombre||'';
+  document.getElementById('prodCategoria').value=p.categoria||'General';
+  document.getElementById('prodUnidad').value=p.unidad||'pza';
+  document.getElementById('prodPrecioCompra').value=p.precio_compra||0;
+  document.getElementById('prodPrecioVenta').value=p.precio_venta||'';
+  document.getElementById('prodStock').value=p.stock||0;
+  document.getElementById('prodStockMin').value=p.stock_minimo||5;
+  document.getElementById('modalProdTitle').textContent='Editar Producto';
   openModal('modalProducto');
 }
 
 async function guardarProducto() {
-  const id = document.getElementById('prodId').value;
-  const data = {
-    codigo: document.getElementById('prodCodigo').value,
-    nombre: document.getElementById('prodNombre').value,
-    categoria: document.getElementById('prodCategoria').value,
-    unidad: document.getElementById('prodUnidad').value,
-    precio_compra: parseFloat(document.getElementById('prodPrecioCompra').value) || 0,
-    precio_venta: parseFloat(document.getElementById('prodPrecioVenta').value),
-    stock: parseInt(document.getElementById('prodStock').value) || 0,
-    stock_minimo: parseInt(document.getElementById('prodStockMin').value) || 5
+  const id=document.getElementById('prodId').value;
+  const data={
+    codigo:document.getElementById('prodCodigo').value,
+    nombre:document.getElementById('prodNombre').value,
+    categoria:document.getElementById('prodCategoria').value,
+    unidad:document.getElementById('prodUnidad').value,
+    precio_compra:parseFloat(document.getElementById('prodPrecioCompra').value)||0,
+    precio_venta:parseFloat(document.getElementById('prodPrecioVenta').value),
+    stock:parseInt(document.getElementById('prodStock').value)||0,
+    stock_minimo:parseInt(document.getElementById('prodStockMin').value)||5
   };
   try {
-    if (id) await api('PUT', '/productos/' + id, data);
-    else await api('POST', '/productos', data);
-    closeModal('modalProducto');
-    loadInventario(); loadProductosPos();
+    if(id) await api('PUT','/productos/'+id,data);
+    else await api('POST','/productos',data);
+    closeModal('modalProducto'); loadInventario(); loadProductosPos();
   } catch(e) { alert(e.message); }
 }
 
 async function eliminarProducto(id) {
-  if (!confirm('¿Eliminar este producto?')) return;
-  await api('DELETE', '/productos/' + id);
+  if(!confirm('¿Eliminar este producto?')) return;
+  await api('DELETE','/productos/'+id);
   loadInventario(); loadProductosPos();
 }
 
-function abrirStock(id, nombre) {
-  document.getElementById('stockProdId').value = id;
-  document.getElementById('stockProdNombre').textContent = nombre;
+function abrirStock(id,nombre) {
+  document.getElementById('stockProdId').value=id;
+  document.getElementById('stockProdNombre').textContent=nombre;
   openModal('modalStock');
 }
 
 async function guardarStock() {
-  const id = document.getElementById('stockProdId').value;
-  const tipo = document.getElementById('stockTipo').value;
-  const cantidad = parseInt(document.getElementById('stockCantidad').value);
-  const nota = document.getElementById('stockNota').value;
-  try {
-    await api('PATCH', '/productos/' + id + '/stock', { tipo, cantidad, nota });
-    closeModal('modalStock');
-    loadInventario(); loadProductosPos();
-  } catch(e) { alert(e.message); }
+  const id=document.getElementById('stockProdId').value;
+  const tipo=document.getElementById('stockTipo').value;
+  const cantidad=parseInt(document.getElementById('stockCantidad').value);
+  const nota=document.getElementById('stockNota').value;
+  try { await api('PATCH','/productos/'+id+'/stock',{tipo,cantidad,nota}); closeModal('modalStock'); loadInventario(); loadProductosPos(); }
+  catch(e) { alert(e.message); }
 }
 
-// ===== VENTAS =====
 function resetVentasFiltro() {
-  const hoy = new Date().toISOString().split('T')[0];
-  document.getElementById('ventasDesde').value = hoy;
-  document.getElementById('ventasHasta').value = hoy;
+  const hoy=new Date().toISOString().split('T')[0];
+  document.getElementById('ventasDesde').value=hoy;
+  document.getElementById('ventasHasta').value=hoy;
 }
 
 async function loadVentas() {
-  const desde = document.getElementById('ventasDesde').value;
-  const hasta = document.getElementById('ventasHasta').value;
-  const ventas = await api('GET', `/ventas?desde=${desde}T00:00:00&hasta=${hasta}T23:59:59`);
-  document.getElementById('ventasTable').innerHTML = ventas.map(v =>
+  const desde=document.getElementById('ventasDesde').value;
+  const hasta=document.getElementById('ventasHasta').value;
+  const ventas=await api('GET',`/ventas?desde=${desde}T00:00:00&hasta=${hasta}T23:59:59`);
+  document.getElementById('ventasTable').innerHTML=ventas.map(v=>
     `<tr>
       <td><span class="badge badge-blue">${v.folio}</span></td>
       <td>${new Date(v.creado_en).toLocaleString('es-MX')}</td>
-      <td>${v.cajero || '—'}</td>
+      <td>${v.cajero||'—'}</td>
       <td><span class="badge badge-green">${v.metodo_pago}</span></td>
       <td style="font-family:'JetBrains Mono',monospace;font-weight:700">$${v.total.toFixed(2)}</td>
       <td><button class="btn btn-secondary btn-sm" onclick="verVenta(${v.id})">Ver</button></td>
-    </tr>`
-  ).join('') || '<tr><td colspan="6" style="text-align:center;color:var(--muted);padding:20px">Sin ventas en este período</td></tr>';
+    </tr>`).join('') || '<tr><td colspan="6" style="text-align:center;color:var(--muted);padding:20px">Sin ventas</td></tr>';
 }
 
 async function verVenta(id) {
-  const v = await api('GET', '/ventas/' + id);
-  document.getElementById('modalVentaTitle').textContent = 'Venta ' + v.folio;
-  document.getElementById('modalVentaContent').innerHTML = `
+  const v=await api('GET','/ventas/'+id);
+  document.getElementById('modalVentaTitle').textContent='Venta '+v.folio;
+  document.getElementById('modalVentaContent').innerHTML=`
     <div style="margin-bottom:12px;font-size:13px;color:var(--muted)">${new Date(v.creado_en).toLocaleString('es-MX')} · ${v.cajero||'—'} · ${v.metodo_pago}</div>
     <table style="width:100%;font-size:13px">
       <thead><tr><th>Producto</th><th>Cant.</th><th>Precio</th><th>Subtotal</th></tr></thead>
@@ -894,123 +760,144 @@ async function verVenta(id) {
   openModal('modalVenta');
 }
 
-// ===== CORTE =====
 async function hacerCorte() {
-  const desde = document.getElementById('corteDesde').value;
-  const notas = document.getElementById('corteNotas').value;
+  const desde=document.getElementById('corteDesde').value;
+  const notas=document.getElementById('corteNotas').value;
   try {
-    const r = await api('POST', '/cortes', { fecha_inicio: desde, notas });
-    const el = document.getElementById('corteResultado');
-    el.style.display = 'block';
-    el.innerHTML = `
-      <div style="padding:28px">
-        <div style="font-family:'Syne',sans-serif;font-size:18px;font-weight:800;margin-bottom:16px">✅ Corte Generado</div>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
-          <div class="stat-card" style="--accent-color:var(--accent)"><div class="stat-label">Total Ventas</div><div class="stat-value">$${r.total_ventas.toFixed(2)}</div></div>
-          <div class="stat-card" style="--accent-color:var(--accent2)"><div class="stat-label">Num. Ventas</div><div class="stat-value">${r.num_ventas}</div></div>
-          <div class="stat-card"><div class="stat-label">💵 Efectivo</div><div class="stat-value">$${r.efectivo.toFixed(2)}</div></div>
-          <div class="stat-card"><div class="stat-label">💳 Tarjeta</div><div class="stat-value">$${r.tarjeta.toFixed(2)}</div></div>
-        </div>
-      </div>`;
+    const r=await api('POST','/cortes',{fecha_inicio:desde,notas});
+    const el=document.getElementById('corteResultado');
+    el.style.display='block';
+    el.innerHTML=`<div style="padding:28px">
+      <div style="font-family:'Syne',sans-serif;font-size:18px;font-weight:800;margin-bottom:16px">✅ Corte Generado</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+        <div class="stat-card" style="--accent-color:var(--accent)"><div class="stat-label">Total Ventas</div><div class="stat-value">$${r.total_ventas.toFixed(2)}</div></div>
+        <div class="stat-card" style="--accent-color:var(--accent2)"><div class="stat-label">Num. Ventas</div><div class="stat-value">${r.num_ventas}</div></div>
+        <div class="stat-card"><div class="stat-label">💵 Efectivo</div><div class="stat-value">$${r.efectivo.toFixed(2)}</div></div>
+        <div class="stat-card"><div class="stat-label">💳 Tarjeta</div><div class="stat-value">$${r.tarjeta.toFixed(2)}</div></div>
+      </div></div>`;
     loadCortes();
   } catch(e) { alert(e.message); }
 }
 
 async function loadCortes() {
-  const cortes = await api('GET', '/cortes');
-  document.getElementById('cortesTable').innerHTML = cortes.map(c =>
+  const cortes=await api('GET','/cortes');
+  document.getElementById('cortesTable').innerHTML=cortes.map(c=>
     `<tr>
       <td>${new Date(c.creado_en).toLocaleString('es-MX')}</td>
-      <td>${c.cajero||'—'}</td>
-      <td>${c.num_ventas}</td>
+      <td>${c.cajero||'—'}</td><td>${c.num_ventas}</td>
       <td style="font-family:'JetBrains Mono',monospace">$${c.efectivo.toFixed(2)}</td>
       <td style="font-family:'JetBrains Mono',monospace">$${c.tarjeta.toFixed(2)}</td>
       <td style="font-family:'JetBrains Mono',monospace;font-weight:700">$${c.total_ventas.toFixed(2)}</td>
-    </tr>`
-  ).join('') || '<tr><td colspan="6" style="text-align:center;color:var(--muted)">Sin cortes</td></tr>';
+    </tr>`).join('') || '<tr><td colspan="6" style="text-align:center;color:var(--muted)">Sin cortes</td></tr>';
 }
 
-// ===== USUARIOS =====
 async function loadUsuarios() {
-  const users = await api('GET', '/usuarios');
-  document.getElementById('usuariosTable').innerHTML = users.map(u =>
+  const users=await api('GET','/usuarios');
+  document.getElementById('usuariosTable').innerHTML=users.map(u=>
     `<tr>
-      <td style="font-weight:600">${u.nombre}</td>
-      <td>${u.email}</td>
+      <td style="font-weight:600">${u.nombre}</td><td>${u.email}</td>
       <td><span class="badge ${u.rol==='dueno'?'badge-warn':'badge-blue'}">${u.rol}</span></td>
       <td><span class="badge ${u.activo?'badge-green':'badge-red'}">${u.activo?'Activo':'Inactivo'}</span></td>
       <td>${u.rol!=='dueno'?`<button class="btn btn-sm ${u.activo?'btn-danger':'btn-primary'}" onclick="toggleUsuario(${u.id})">${u.activo?'Desactivar':'Activar'}</button>`:'—'}</td>
-    </tr>`
-  ).join('');
+    </tr>`).join('');
 }
 
 async function guardarUsuario() {
   try {
-    await api('POST', '/usuarios', {
-      nombre: document.getElementById('userNombre').value,
-      email: document.getElementById('userEmail').value,
-      password: document.getElementById('userPassword').value,
-      rol: document.getElementById('userRol').value
-    });
-    closeModal('modalUsuario');
-    loadUsuarios();
+    await api('POST','/usuarios',{nombre:document.getElementById('userNombre').value,email:document.getElementById('userEmail').value,password:document.getElementById('userPassword').value,rol:document.getElementById('userRol').value});
+    closeModal('modalUsuario'); loadUsuarios();
   } catch(e) { alert(e.message); }
 }
 
-async function toggleUsuario(id) {
-  await api('PATCH', '/usuarios/' + id + '/toggle');
-  loadUsuarios();
-}
+async function toggleUsuario(id) { await api('PATCH','/usuarios/'+id+'/toggle'); loadUsuarios(); }
 
-// ===== MONITOREO CAJEROS =====
-function setCajeroHoy() {
-  document.getElementById('cajeroFecha').value = new Date().toISOString().split('T')[0];
-}
+function setCajeroHoy() { document.getElementById('cajeroFecha').value=new Date().toISOString().split('T')[0]; }
 
 async function loadCajerosActividad() {
-  const fecha = document.getElementById('cajeroFecha').value;
+  const fecha=document.getElementById('cajeroFecha').value;
   try {
-    const r = await api('GET', '/cajeros/actividad?fecha=' + fecha);
-
-    // Alertas de actividad
-    const d = await api('GET', '/dashboard');
-    if (d.alertas_actividad && d.alertas_actividad.length > 0) {
-      document.getElementById('alertasActividad').innerHTML = d.alertas_actividad.map(a =>
-        `<div class="alerta-card alerta-${a.tipo}">⚠️ ${a.mensaje}</div>`
-      ).join('');
+    const r=await api('GET','/cajeros/actividad?fecha='+fecha);
+    const d=await api('GET','/dashboard');
+    if(d.alertas_actividad?.length>0) {
+      document.getElementById('alertasActividad').innerHTML=d.alertas_actividad.map(a=>`<div class="alerta-card alerta-${a.tipo}">⚠️ ${a.mensaje}</div>`).join('');
     } else {
-      document.getElementById('alertasActividad').innerHTML = '<div class="alert alert-success">✅ Sin actividad inusual hoy</div>';
+      document.getElementById('alertasActividad').innerHTML='<div class="alert alert-success">✅ Sin actividad inusual hoy</div>';
     }
-
-    document.getElementById('cajerosLista').innerHTML = r.cajeros.map(c => `
+    document.getElementById('cajerosLista').innerHTML=r.cajeros.map(c=>`
       <div class="cajero-card">
         <div class="cajero-info">
-          <div class="cajero-nombre">${c.nombre} <span class="badge ${c.activo ? 'badge-green' : 'badge-red'}">${c.activo ? 'Activo' : 'Bloqueado'}</span></div>
+          <div class="cajero-nombre">${c.nombre} <span class="badge ${c.activo?'badge-green':'badge-red'}">${c.activo?'Activo':'Bloqueado'}</span></div>
           <div class="cajero-stats">
             <span>${c.num_ventas} ventas</span>
             <span>💵 $${(c.efectivo||0).toFixed(2)}</span>
             <span>💳 $${(c.tarjeta||0).toFixed(2)}</span>
             <span>📱 $${(c.transferencia||0).toFixed(2)}</span>
             <span>Descuentos: $${(c.total_descuentos||0).toFixed(2)}</span>
-            <span>Última venta: ${c.ultima_venta ? new Date(c.ultima_venta).toLocaleTimeString('es-MX') : 'Sin actividad'}</span>
+            <span>Última: ${c.ultima_venta?new Date(c.ultima_venta).toLocaleTimeString('es-MX'):'Sin actividad'}</span>
           </div>
         </div>
         <div class="cajero-total">$${(c.total_vendido||0).toFixed(2)}</div>
-        ${c.activo
-          ? `<button class="btn btn-danger btn-sm" onclick="bloquearCajero(${c.id}, '${c.nombre}')">🚫 Bloquear</button>`
-          : `<button class="btn btn-primary btn-sm" onclick="activarCajero(${c.id}, '${c.nombre}')">✅ Activar</button>`
-        }
-      </div>
-    `).join('') || '<div style="color:var(--muted);font-size:13px">Sin empleados registrados</div>';
+        ${c.activo?`<button class="btn btn-danger btn-sm" onclick="toggleCajero(${c.id},'${c.nombre}',true)">🚫 Bloquear</button>`:`<button class="btn btn-primary btn-sm" onclick="toggleCajero(${c.id},'${c.nombre}',false)">✅ Activar</button>`}
+      </div>`).join('') || '<div style="color:var(--muted);font-size:13px">Sin empleados registrados</div>';
   } catch(e) { console.error(e); }
 }
 
-// INIT
-if (token && user) initApp();
-else { document.getElementById('loginScreen').style.display = 'flex'; }
+// ===== EXPORTAR =====
+function setExportHoy() {
+  const hoy=new Date().toISOString().split('T')[0];
+  document.getElementById('exportDesde').value=hoy;
+  document.getElementById('exportHasta').value=hoy;
+}
+function setExportMes() {
+  const now=new Date();
+  const inicio=new Date(now.getFullYear(),now.getMonth(),1).toISOString().split('T')[0];
+  const fin=new Date(now.getFullYear(),now.getMonth()+1,0).toISOString().split('T')[0];
+  document.getElementById('exportDesde').value=inicio;
+  document.getElementById('exportHasta').value=fin;
+}
+function clearExportFechas() {
+  document.getElementById('exportDesde').value='';
+  document.getElementById('exportHasta').value='';
+}
 
-document.addEventListener('keydown', e => {
-  if (e.key === 'Escape') document.querySelectorAll('.modal-overlay.open').forEach(m => m.classList.remove('open'));
+function exportar(tipo) {
+  const desde=document.getElementById('exportDesde').value;
+  const hasta=document.getElementById('exportHasta').value;
+  let url=`/api/exportar/${tipo}`;
+  const params=[];
+  if(desde) params.push(`desde=${desde}T00:00:00`);
+  if(hasta) params.push(`hasta=${hasta}T23:59:59`);
+  if(params.length) url+='?'+params.join('&');
+
+  // Crear link temporal con token
+  const a=document.createElement('a');
+  fetch(url,{headers:{'Authorization':'Bearer '+token}})
+    .then(r=>r.blob())
+    .then(blob=>{
+      const objUrl=URL.createObjectURL(blob);
+      a.href=objUrl;
+      a.download=`${tipo}_${new Date().toISOString().split('T')[0]}.csv`;
+      a.click();
+      URL.revokeObjectURL(objUrl);
+    }).catch(e=>alert('Error al exportar: '+e.message));
+}
+
+function descargarBackup() {
+  fetch('/api/backup',{headers:{'Authorization':'Bearer '+token}})
+    .then(r=>r.blob())
+    .then(blob=>{
+      const a=document.createElement('a');
+      a.href=URL.createObjectURL(blob);
+      a.download=`tienda_backup_${new Date().toISOString().split('T')[0]}.db`;
+      a.click();
+    }).catch(e=>alert('Error al descargar backup: '+e.message));
+}
+
+if(token&&user) initApp();
+else document.getElementById('loginScreen').style.display='flex';
+
+document.addEventListener('keydown',e=>{
+  if(e.key==='Escape') document.querySelectorAll('.modal-overlay.open').forEach(m=>m.classList.remove('open'));
 });
 </script>
 </body>
