@@ -4,6 +4,7 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const cors = require('cors');
 const path = require('path');
+const fs = require('fs');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -14,7 +15,8 @@ app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
 
 // DATABASE SETUP
-const db = new sqlite3(process.env.DATABASE_PATH || './tienda.db');
+const DB_PATH = process.env.DATABASE_PATH || './tienda.db';
+const db = new sqlite3(DB_PATH);
 
 db.exec(`
   CREATE TABLE IF NOT EXISTS usuarios (
@@ -76,7 +78,7 @@ db.exec(`
     usuario_id INTEGER,
     creado_en DATETIME DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (producto_id) REFERENCES productos(id),
-    FOREIGN KEY (usuario_id) REFERENCES usuarios(id)
+    FOREIGN KEY (usuario_id) REFERENCIAS usuarios(id)
   );
 
   CREATE TABLE IF NOT EXISTS cortes (
@@ -130,7 +132,7 @@ app.post('/api/auth/login', (req, res) => {
   res.json({ token, user: { id: user.id, nombre: user.nombre, rol: user.rol, email: user.email } });
 });
 
-// ===== USUARIOS (solo dueño) =====
+// ===== USUARIOS =====
 app.get('/api/usuarios', authMiddleware, solodueno, (req, res) => {
   const users = db.prepare('SELECT id, nombre, email, rol, activo, creado_en FROM usuarios').all();
   res.json(users);
@@ -209,10 +211,8 @@ app.delete('/api/productos/:id', authMiddleware, solodueno, (req, res) => {
 app.post('/api/ventas', authMiddleware, (req, res) => {
   const { items, metodo_pago, descuento, notas } = req.body;
   if (!items?.length) return res.status(400).json({ error: 'Sin productos' });
-
   const folio = 'V' + Date.now();
   let total = 0;
-
   const insertVenta = db.transaction(() => {
     for (const item of items) {
       const prod = db.prepare('SELECT * FROM productos WHERE id = ? AND activo = 1').get(item.producto_id);
@@ -230,7 +230,6 @@ app.post('/api/ventas', authMiddleware, (req, res) => {
     }
     return venta.lastInsertRowid;
   });
-
   try {
     const id = insertVenta();
     res.json({ id, folio, total, mensaje: 'Venta registrada' });
@@ -257,13 +256,10 @@ app.get('/api/ventas/:id', authMiddleware, (req, res) => {
   res.json({ ...venta, items });
 });
 
-// ===== CORTE DE CAJA (BUG CORREGIDO) =====
+// ===== CORTE DE CAJA =====
 app.post('/api/cortes', authMiddleware, (req, res) => {
   const { fecha_inicio, notas } = req.body;
-
-  // ✅ CORRECCIÓN: usar inicio del día de hoy en lugar de hace 24 horas
   const desde = fecha_inicio || new Date().toISOString().split('T')[0] + 'T00:00:00.000Z';
-
   const ventas = db.prepare('SELECT * FROM ventas WHERE creado_en >= ? AND creado_en <= CURRENT_TIMESTAMP').all(desde);
   const total = ventas.reduce((s, v) => s + v.total, 0);
   const efectivo = ventas.filter(v => v.metodo_pago === 'efectivo').reduce((s, v) => s + v.total, 0);
@@ -287,7 +283,6 @@ app.get('/api/dashboard', authMiddleware, (req, res) => {
   const ultimas_ventas = db.prepare('SELECT v.folio, v.total, v.metodo_pago, v.creado_en, u.nombre as cajero FROM ventas v LEFT JOIN usuarios u ON v.usuario_id = u.id ORDER BY v.creado_en DESC LIMIT 5').all();
   const alertas = db.prepare('SELECT nombre, codigo, stock, stock_minimo FROM productos WHERE activo = 1 AND stock <= stock_minimo ORDER BY stock ASC LIMIT 10').all();
 
-  // ✅ NUEVO: actividad por cajero hoy
   const actividad_cajeros = db.prepare(`
     SELECT u.id, u.nombre, u.activo,
       COUNT(v.id) as num_ventas,
@@ -300,10 +295,7 @@ app.get('/api/dashboard', authMiddleware, (req, res) => {
     ORDER BY total_vendido DESC
   `).all(hoy);
 
-  // ✅ NUEVO: alertas de actividad inusual
   const alertas_actividad = [];
-
-  // Detectar ventas fuera de horario (antes de 7am o después de 10pm)
   const ventas_fuera_horario = db.prepare(`
     SELECT COUNT(*) as num FROM ventas
     WHERE date(creado_en) = ?
@@ -311,55 +303,27 @@ app.get('/api/dashboard', authMiddleware, (req, res) => {
       OR CAST(strftime('%H', creado_en) AS INTEGER) >= 22)
   `).get(hoy);
   if (ventas_fuera_horario.num > 0) {
-    alertas_actividad.push({
-      tipo: 'warning',
-      mensaje: `${ventas_fuera_horario.num} venta(s) fuera de horario normal (antes 7am o después 10pm)`
-    });
+    alertas_actividad.push({ tipo: 'warning', mensaje: `${ventas_fuera_horario.num} venta(s) fuera de horario normal` });
   }
-
-  // Detectar cajero con muchos descuentos hoy
   const descuentos_sospechosos = db.prepare(`
     SELECT u.nombre, COUNT(v.id) as num_descuentos
-    FROM ventas v
-    LEFT JOIN usuarios u ON v.usuario_id = u.id
+    FROM ventas v LEFT JOIN usuarios u ON v.usuario_id = u.id
     WHERE date(v.creado_en) = ? AND v.descuento > 0
-    GROUP BY v.usuario_id
-    HAVING num_descuentos >= 3
+    GROUP BY v.usuario_id HAVING num_descuentos >= 3
   `).all(hoy);
   descuentos_sospechosos.forEach(d => {
-    alertas_actividad.push({
-      tipo: 'danger',
-      mensaje: `${d.nombre} aplicó descuentos en ${d.num_descuentos} ventas hoy`
-    });
-  });
-
-  // Detectar cajero con alto volumen inusual (más de 50 ventas en un día)
-  const volumen_alto = db.prepare(`
-    SELECT u.nombre, COUNT(v.id) as num
-    FROM ventas v
-    LEFT JOIN usuarios u ON v.usuario_id = u.id
-    WHERE date(v.creado_en) = ?
-    GROUP BY v.usuario_id
-    HAVING num > 50
-  `).all(hoy);
-  volumen_alto.forEach(d => {
-    alertas_actividad.push({
-      tipo: 'warning',
-      mensaje: `${d.nombre} tiene ${d.num} ventas hoy — volumen inusualmente alto`
-    });
+    alertas_actividad.push({ tipo: 'danger', mensaje: `${d.nombre} aplicó descuentos en ${d.num_descuentos} ventas hoy` });
   });
 
   res.json({ ventas_hoy, productos_total, bajo_stock, ultimas_ventas, alertas, actividad_cajeros, alertas_actividad });
 });
 
-// ===== MONITOREO DE CAJEROS (solo dueño) =====
+// ===== MONITOREO DE CAJEROS =====
 app.get('/api/cajeros/actividad', authMiddleware, solodueno, (req, res) => {
   const { fecha } = req.query;
   const dia = fecha || new Date().toISOString().split('T')[0];
-
   const actividad = db.prepare(`
-    SELECT
-      u.id, u.nombre, u.email, u.rol, u.activo,
+    SELECT u.id, u.nombre, u.email, u.rol, u.activo,
       COUNT(v.id) as num_ventas,
       COALESCE(SUM(v.total), 0) as total_vendido,
       COALESCE(SUM(CASE WHEN v.metodo_pago = 'efectivo' THEN v.total ELSE 0 END), 0) as efectivo,
@@ -370,11 +334,101 @@ app.get('/api/cajeros/actividad', authMiddleware, solodueno, (req, res) => {
     FROM usuarios u
     LEFT JOIN ventas v ON v.usuario_id = u.id AND date(v.creado_en) = ?
     WHERE u.rol != 'dueno'
-    GROUP BY u.id
-    ORDER BY total_vendido DESC
+    GROUP BY u.id ORDER BY total_vendido DESC
   `).all(dia);
-
   res.json({ fecha: dia, cajeros: actividad });
+});
+
+// ===== EXPORTAR A EXCEL (CSV descargable) =====
+
+// Exportar ventas
+app.get('/api/exportar/ventas', authMiddleware, solodueno, (req, res) => {
+  const { desde, hasta } = req.query;
+  let query = `SELECT v.folio, v.creado_en as fecha, u.nombre as cajero, v.metodo_pago, v.descuento, v.total, v.notas
+    FROM ventas v LEFT JOIN usuarios u ON v.usuario_id = u.id WHERE 1=1`;
+  const params = [];
+  if (desde) { query += ' AND v.creado_en >= ?'; params.push(desde); }
+  if (hasta) { query += ' AND v.creado_en <= ?'; params.push(hasta); }
+  query += ' ORDER BY v.creado_en DESC';
+  const ventas = db.prepare(query).all(...params);
+
+  let csv = 'Folio,Fecha,Cajero,Método de Pago,Descuento,Total,Notas\n';
+  ventas.forEach(v => {
+    csv += `"${v.folio}","${v.fecha}","${v.cajero||''}","${v.metodo_pago}","${v.descuento}","${v.total}","${v.notas||''}"\n`;
+  });
+
+  res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+  res.setHeader('Content-Disposition', `attachment; filename="ventas_${new Date().toISOString().split('T')[0]}.csv"`);
+  res.send('\uFEFF' + csv); // BOM para que Excel abra bien el UTF-8
+});
+
+// Exportar detalle de productos vendidos
+app.get('/api/exportar/detalle-ventas', authMiddleware, solodueno, (req, res) => {
+  const { desde, hasta } = req.query;
+  let query = `SELECT v.folio, v.creado_en as fecha, u.nombre as cajero,
+    p.codigo, p.nombre as producto, vi.cantidad, vi.precio_unitario, vi.subtotal
+    FROM venta_items vi
+    LEFT JOIN ventas v ON vi.venta_id = v.id
+    LEFT JOIN productos p ON vi.producto_id = p.id
+    LEFT JOIN usuarios u ON v.usuario_id = u.id
+    WHERE 1=1`;
+  const params = [];
+  if (desde) { query += ' AND v.creado_en >= ?'; params.push(desde); }
+  if (hasta) { query += ' AND v.creado_en <= ?'; params.push(hasta); }
+  query += ' ORDER BY v.creado_en DESC';
+  const items = db.prepare(query).all(...params);
+
+  let csv = 'Folio,Fecha,Cajero,Código,Producto,Cantidad,Precio Unitario,Subtotal\n';
+  items.forEach(i => {
+    csv += `"${i.folio}","${i.fecha}","${i.cajero||''}","${i.codigo||''}","${i.producto||''}","${i.cantidad}","${i.precio_unitario}","${i.subtotal}"\n`;
+  });
+
+  res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+  res.setHeader('Content-Disposition', `attachment; filename="detalle_ventas_${new Date().toISOString().split('T')[0]}.csv"`);
+  res.send('\uFEFF' + csv);
+});
+
+// Exportar inventario
+app.get('/api/exportar/inventario', authMiddleware, solodueno, (req, res) => {
+  const productos = db.prepare('SELECT codigo, nombre, categoria, precio_compra, precio_venta, stock, stock_minimo, unidad FROM productos WHERE activo = 1 ORDER BY nombre').all();
+
+  let csv = 'Código,Nombre,Categoría,Precio Compra,Precio Venta,Stock Actual,Stock Mínimo,Unidad\n';
+  productos.forEach(p => {
+    csv += `"${p.codigo}","${p.nombre}","${p.categoria}","${p.precio_compra}","${p.precio_venta}","${p.stock}","${p.stock_minimo}","${p.unidad}"\n`;
+  });
+
+  res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+  res.setHeader('Content-Disposition', `attachment; filename="inventario_${new Date().toISOString().split('T')[0]}.csv"`);
+  res.send('\uFEFF' + csv);
+});
+
+// Exportar cortes de caja
+app.get('/api/exportar/cortes', authMiddleware, solodueno, (req, res) => {
+  const cortes = db.prepare(`SELECT c.creado_en as fecha, u.nombre as cajero, c.num_ventas,
+    c.efectivo, c.tarjeta, c.transferencia, c.total_ventas, c.notas
+    FROM cortes c LEFT JOIN usuarios u ON c.usuario_id = u.id ORDER BY c.creado_en DESC`).all();
+
+  let csv = 'Fecha,Cajero,Num Ventas,Efectivo,Tarjeta,Transferencia,Total,Notas\n';
+  cortes.forEach(c => {
+    csv += `"${c.fecha}","${c.cajero||''}","${c.num_ventas}","${c.efectivo}","${c.tarjeta}","${c.transferencia}","${c.total_ventas}","${c.notas||''}"\n`;
+  });
+
+  res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+  res.setHeader('Content-Disposition', `attachment; filename="cortes_${new Date().toISOString().split('T')[0]}.csv"`);
+  res.send('\uFEFF' + csv);
+});
+
+// ===== BACKUP =====
+app.get('/api/backup', authMiddleware, solodueno, (req, res) => {
+  try {
+    if (!fs.existsSync(DB_PATH)) return res.status(404).json({ error: 'Base de datos no encontrada' });
+    const fecha = new Date().toISOString().split('T')[0];
+    res.setHeader('Content-Type', 'application/octet-stream');
+    res.setHeader('Content-Disposition', `attachment; filename="tienda_backup_${fecha}.db"`);
+    res.send(fs.readFileSync(DB_PATH));
+  } catch(e) {
+    res.status(500).json({ error: 'Error al generar backup: ' + e.message });
+  }
 });
 
 app.listen(PORT, () => console.log(`✅ Servidor corriendo en puerto ${PORT}`));
