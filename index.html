@@ -432,7 +432,8 @@ tr:hover td { background:#fafaf8; }
 <script>
 const API = '';
 let token = localStorage.getItem('token');
-let user = JSON.parse(localStorage.getItem('user') || 'null');
+let user = null;
+try { user = JSON.parse(localStorage.getItem('user') || 'null'); } catch(e) { user = null; }
 let carrito = [], metodoPago = 'efectivo', camActiva = false, productosCache = [];
 
 async function api(method, path, body) {
