@@ -112,6 +112,9 @@ tr:hover td { background:#fafaf8; }
 .pay-btns { display:grid; grid-template-columns:1fr 1fr 1fr; gap:8px; margin-top:12px; }
 .pay-btn { padding:10px; border-radius:8px; border:2px solid var(--border); background:white; cursor:pointer; font-size:11px; font-weight:600; transition:all .2s; }
 .pay-btn.selected { border-color:var(--accent); background:#f0fff4; color:var(--accent); }
+.denom-btn { padding:8px 4px; border-radius:8px; border:2px solid var(--border); background:white; cursor:pointer; font-size:12px; font-weight:700; font-family:'JetBrains Mono',monospace; transition:all .2s; }
+.denom-btn:hover { border-color:var(--accent); background:#f0fff4; color:var(--accent); }
+.denom-btn.selected { border-color:var(--accent); background:var(--accent); color:white; }
 
 #scannerCam { position:relative; width:100%; height:200px; border-radius:10px; overflow:hidden; background:#000; margin-bottom:12px; display:none; }
 #scannerCam video { width:100%; height:100%; object-fit:cover; }
@@ -239,6 +242,24 @@ tr:hover td { background:#fafaf8; }
                 <button class="pay-btn selected" id="pay-efectivo" onclick="selectPago('efectivo')">💵 Efectivo</button>
                 <button class="pay-btn" id="pay-tarjeta" onclick="selectPago('tarjeta')">💳 Tarjeta</button>
                 <button class="pay-btn" id="pay-transferencia" onclick="selectPago('transferencia')">📱 Transfer.</button>
+              </div>
+              <div id="seccionEfectivo" style="margin-top:12px;padding:12px;background:#f0fff4;border-radius:10px;border:1px solid #b7e4c7">
+                <div style="font-size:11px;color:var(--muted);margin-bottom:8px;font-weight:700;letter-spacing:1px">PAGO CON:</div>
+                <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:5px;margin-bottom:8px">
+                  <button class="denom-btn" onclick="setDenom(20)">$20</button>
+                  <button class="denom-btn" onclick="setDenom(50)">$50</button>
+                  <button class="denom-btn" onclick="setDenom(100)">$100</button>
+                  <button class="denom-btn" onclick="setDenom(200)">$200</button>
+                  <button class="denom-btn" onclick="setDenom(500)">$500</button>
+                  <button class="denom-btn" onclick="setDenom(1000)">$1000</button>
+                  <button class="denom-btn" style="grid-column:span 2" onclick="setDenom(null)">Otro monto</button>
+                </div>
+                <input type="number" id="montoPagado" placeholder="Monto recibido $" oninput="calcularCambio()"
+                  style="width:100%;padding:10px;border:2px solid var(--accent);border-radius:8px;font-size:15px;font-weight:700;font-family:'JetBrains Mono',monospace;text-align:right;outline:none;margin-bottom:8px">
+                <div id="cambioDisplay" style="display:none;padding:10px;background:white;border-radius:8px;border:2px solid var(--accent);display:flex;justify-content:space-between;align-items:center">
+                  <span style="font-size:13px;font-weight:700">CAMBIO:</span>
+                  <span id="cambioMonto" style="font-family:'Syne',sans-serif;font-size:26px;font-weight:800;color:var(--accent)">$0.00</span>
+                </div>
               </div>
               <button class="btn btn-primary btn-full" style="margin-top:12px;font-size:16px" onclick="cobrar()">✅ COBRAR</button>
               <button class="btn btn-secondary btn-full" style="margin-top:8px" onclick="limpiarCarrito()">🗑 Limpiar</button>
@@ -589,8 +610,51 @@ function renderCart() {
 
 function changeQty(i,delta) { carrito[i].cantidad+=delta; if(carrito[i].cantidad<=0) carrito.splice(i,1); renderCart(); }
 function removeFromCart(i) { carrito.splice(i,1); renderCart(); }
-function limpiarCarrito() { carrito=[]; renderCart(); }
-function selectPago(m) { metodoPago=m; document.querySelectorAll('.pay-btn').forEach(b=>b.classList.remove('selected')); document.getElementById('pay-'+m).classList.add('selected'); }
+function limpiarCarrito() {
+  carrito=[];
+  renderCart();
+  document.getElementById('montoPagado').value='';
+  document.getElementById('cambioDisplay').style.display='none';
+  document.querySelectorAll('.denom-btn').forEach(b=>b.classList.remove('selected'));
+}
+function selectPago(m) {
+  metodoPago=m;
+  document.querySelectorAll('.pay-btn').forEach(b=>b.classList.remove('selected'));
+  document.getElementById('pay-'+m).classList.add('selected');
+  const seccion = document.getElementById('seccionEfectivo');
+  seccion.style.display = m === 'efectivo' ? 'block' : 'none';
+  if (m !== 'efectivo') {
+    document.getElementById('montoPagado').value = '';
+    document.getElementById('cambioDisplay').style.display = 'none';
+  }
+}
+
+function setDenom(monto) {
+  document.querySelectorAll('.denom-btn').forEach(b=>b.classList.remove('selected'));
+  event.currentTarget.classList.add('selected');
+  if (monto !== null) {
+    document.getElementById('montoPagado').value = monto;
+    calcularCambio();
+  } else {
+    document.getElementById('montoPagado').value = '';
+    document.getElementById('montoPagado').focus();
+    document.getElementById('cambioDisplay').style.display = 'none';
+  }
+}
+
+function calcularCambio() {
+  const pagado = parseFloat(document.getElementById('montoPagado').value) || 0;
+  const total = parseFloat(document.getElementById('cartTotal').textContent.replace('$','')) || 0;
+  const cambio = pagado - total;
+  const display = document.getElementById('cambioDisplay');
+  if (pagado > 0) {
+    display.style.display = 'flex';
+    document.getElementById('cambioMonto').textContent = '$' + (cambio >= 0 ? cambio : 0).toFixed(2);
+    document.getElementById('cambioMonto').style.color = cambio >= 0 ? 'var(--accent)' : 'var(--danger)';
+  } else {
+    display.style.display = 'none';
+  }
+}
 
 async function cobrar() {
   if (!carrito.length) return showPosAlert('Carrito vacío', 'warn');
