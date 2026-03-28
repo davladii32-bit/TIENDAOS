@@ -36,7 +36,7 @@ body { font-family:'Nunito',sans-serif; background:var(--bg); color:var(--text);
 #app { display:none; min-height:100vh; }
 .layout { display:flex; min-height:100vh; }
 
-.sidebar { width:220px; background:var(--sidebar); flex-shrink:0; display:flex; flex-direction:column; padding:24px 0; position:fixed; height:100vh; overflow-y:auto; }
+.sidebar { width:220px; background:var(--sidebar); flex-shrink:0; display:flex; flex-direction:column; padding:24px 0; position:fixed; height:100vh; overflow-y:auto; z-index:150; }
 .sidebar-logo { font-family:'Syne',sans-serif; font-size:20px; font-weight:800; color:white; padding:0 20px 24px; border-bottom:1px solid rgba(255,255,255,0.1); }
 .sidebar-logo span { color:var(--accent2); }
 .sidebar-section { padding:16px 12px 8px; font-size:10px; letter-spacing:2px; color:rgba(255,255,255,0.3); font-family:'JetBrains Mono',monospace; text-transform:uppercase; }
@@ -77,6 +77,7 @@ tr:hover td { background:#fafaf8; }
 .badge-red { background:#ffe0dc; color:#e63946; }
 .badge-warn { background:#fff3cd; color:#f4a261; }
 .badge-blue { background:#dce9ff; color:#2b5fad; }
+.badge-purple { background:#ede9fe; color:#6d28d9; }
 
 .search-row { display:flex; gap:12px; margin-bottom:20px; align-items:center; flex-wrap:wrap; }
 .search-input { flex:1; padding:10px 14px; border:2px solid var(--border); border-radius:10px; font-family:'Nunito',sans-serif; font-size:14px; outline:none; min-width:150px; }
@@ -94,11 +95,12 @@ tr:hover td { background:#fafaf8; }
 .scanner-bar { display:flex; gap:10px; margin-bottom:16px; }
 .scanner-input { flex:1; padding:12px 14px; border:2px solid var(--accent); border-radius:10px; font-size:14px; font-family:'JetBrains Mono',monospace; outline:none; }
 .prod-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(130px,1fr)); gap:10px; }
-.prod-card { border:2px solid var(--border); border-radius:10px; padding:12px; cursor:pointer; transition:all .2s; text-align:center; }
+.prod-card { border:2px solid var(--border); border-radius:10px; padding:12px; cursor:pointer; transition:all .2s; text-align:center; position:relative; }
 .prod-card:hover { border-color:var(--accent); background:#f0fff4; }
 .prod-card .pname { font-size:12px; font-weight:600; margin-bottom:4px; }
 .prod-card .pprice { font-family:'JetBrains Mono',monospace; font-size:14px; color:var(--accent); font-weight:600; }
 .prod-card .pstock { font-size:10px; color:var(--muted); margin-top:2px; }
+.prod-card .granel-badge { position:absolute; top:6px; right:6px; background:#ede9fe; color:#6d28d9; font-size:9px; font-weight:700; padding:2px 5px; border-radius:4px; font-family:'JetBrains Mono',monospace; }
 .cart-items { flex:1; overflow-y:auto; margin-bottom:16px; }
 .cart-item { display:flex; align-items:center; gap:8px; padding:10px 0; border-bottom:1px solid var(--border); }
 .cart-item-name { flex:1; font-size:13px; font-weight:600; }
@@ -138,17 +140,79 @@ tr:hover td { background:#fafaf8; }
 .export-card h3 { font-family:'Syne',sans-serif; font-size:16px; font-weight:700; margin-bottom:6px; }
 .export-card p { font-size:13px; color:var(--muted); margin-bottom:16px; }
 
-@media(max-width:768px) {
-  .sidebar { width:60px; }
-  .nav-item span, .sidebar-logo, .sidebar-section, .sidebar-user .name, .sidebar-user .role { display:none; }
-  .main { margin-left:60px; padding:16px; }
-  .stats-grid { grid-template-columns:repeat(2,1fr); }
-  .pos-layout { grid-template-columns:1fr; }
+/* === GRANEL === */
+.granel-info { background:#f5f3ff; border:1px solid #c4b5fd; border-radius:10px; padding:10px 14px; font-size:12px; color:#6d28d9; margin-bottom:10px; font-family:'JetBrains Mono',monospace; }
+.granel-input-row { display:flex; align-items:center; gap:8px; margin-top:6px; }
+.granel-input-row input { width:90px; padding:8px 10px; border:2px solid #c4b5fd; border-radius:8px; font-family:'JetBrains Mono',monospace; font-size:14px; text-align:center; outline:none; }
+.granel-input-row input:focus { border-color:#7c3aed; }
+.granel-input-row span { font-size:13px; color:#6d28d9; font-weight:600; }
+
+/* === BOTÓN HAMBURGUESA === */
+.menu-toggle { display:none; position:fixed; top:14px; left:14px; z-index:200; background:var(--sidebar); color:white; border:none; border-radius:10px; width:42px; height:42px; font-size:20px; cursor:pointer; align-items:center; justify-content:center; box-shadow:0 4px 12px rgba(0,0,0,0.3); }
+.sidebar-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.5); z-index:149; }
+.sidebar-overlay.open { display:block; }
+
+/* ============================================================
+   MÓVIL: <= 768px
+   ============================================================ */
+@media (max-width:768px) {
+  .menu-toggle { display:flex; }
+
+  .sidebar { width:240px; transform:translateX(-100%); transition:transform 0.28s ease; }
+  .sidebar.open { transform:translateX(0); }
+  .nav-item span, .sidebar-logo, .sidebar-section, .sidebar-user .name, .sidebar-user .role { display:block !important; }
+  .nav-item { display:flex !important; }
+
+  .main { margin-left:0; padding:16px; padding-top:68px; }
+
+  .stats-grid { grid-template-columns:repeat(2,1fr); gap:10px; }
+  .stat-value { font-size:22px; }
+
+  #page-dashboard .dash-grid { display:flex !important; flex-direction:column; gap:16px; }
+
+  .pos-layout { grid-template-columns:1fr; height:auto; gap:16px; }
+  .pos-productos { max-height:55vh; overflow-y:auto; }
+
+  .scanner-bar { flex-wrap:wrap; gap:8px; }
+  .scanner-input { min-width:100%; }
+  .scanner-bar .btn { flex:1; }
+
+  .pay-btns { grid-template-columns:repeat(3,1fr); gap:6px; }
+  .pay-btn { padding:10px 4px; font-size:10px; }
+
+  .prod-grid { grid-template-columns:repeat(2,1fr); }
+
+  .search-row { flex-direction:column; align-items:stretch; }
+  .search-row .search-input, .search-row select, .search-row .btn { width:100%; }
+
+  .table-card { overflow-x:auto; }
+  table { min-width:480px; }
+
+  .modal-overlay { align-items:flex-end; padding:0; }
+  .modal { width:100%; max-width:100%; border-radius:20px 20px 0 0; max-height:92vh; padding:24px 20px; }
+
   .export-grid { grid-template-columns:1fr; }
+
+  .cajero-card { flex-direction:column; align-items:flex-start; gap:10px; }
+  .cajero-total { font-size:18px; }
+
+  .login-box { width:92vw; padding:32px 24px; }
+
+  #page-corte .table-card { max-width:100% !important; }
+}
+
+@media (max-width:400px) {
+  .stat-value { font-size:18px; }
+  .prod-grid { grid-template-columns:repeat(2,1fr); }
+  .page-title { font-size:20px; }
 }
 </style>
 </head>
 <body>
+
+<!-- Botón hamburguesa móvil -->
+<button class="menu-toggle" onclick="toggleSidebar()">☰</button>
+<div class="sidebar-overlay" id="sidebarOverlay" onclick="closeSidebar()"></div>
 
 <div id="loginScreen">
   <div class="login-box">
@@ -196,7 +260,7 @@ tr:hover td { background:#fafaf8; }
           <div class="stat-card" style="--accent-color:#e76f51"><div class="stat-label">Productos</div><div class="stat-value" id="dashProductos">0</div><div class="stat-desc">en catálogo</div></div>
           <div class="stat-card" style="--accent-color:#e63946"><div class="stat-label">Stock Bajo</div><div class="stat-value" id="dashBajoStock">0</div><div class="stat-desc">productos</div></div>
         </div>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px">
+        <div class="dash-grid" style="display:grid;grid-template-columns:1fr 1fr;gap:20px">
           <div class="table-card">
             <div class="table-header"><span class="table-title">Últimas Ventas</span></div>
             <table><thead><tr><th>Folio</th><th>Cajero</th><th>Total</th></tr></thead><tbody id="dashUltimasVentas"></tbody></table>
@@ -262,7 +326,7 @@ tr:hover td { background:#fafaf8; }
           <button class="btn btn-primary" onclick="nuevoProducto()">+ Nuevo Producto</button>
         </div>
         <div class="table-card">
-          <table><thead><tr><th>Código</th><th>Nombre</th><th>Categoría</th><th>Precio</th><th>Stock</th><th>Mínimo</th><th>Acciones</th></tr></thead><tbody id="invTable"></tbody></table>
+          <table><thead><tr><th>Código</th><th>Nombre</th><th>Categoría</th><th>Precio</th><th>Stock</th><th>Mínimo</th><th>Tipo</th><th>Acciones</th></tr></thead><tbody id="invTable"></tbody></table>
         </div>
       </div>
 
@@ -322,7 +386,6 @@ tr:hover td { background:#fafaf8; }
       <div class="page" id="page-exportar">
         <div class="page-title">Exportar a Excel</div>
         <div class="page-sub">Descarga tu información en formato CSV (compatible con Excel y Google Sheets)</div>
-
         <div class="table-card" style="padding:20px;margin-bottom:20px">
           <div style="font-weight:700;margin-bottom:12px">Filtrar por fecha (aplica a ventas y detalle)</div>
           <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap">
@@ -333,30 +396,12 @@ tr:hover td { background:#fafaf8; }
             <button class="btn btn-secondary" style="margin-top:18px" onclick="clearExportFechas()">Todo</button>
           </div>
         </div>
-
         <div class="export-grid">
-          <div class="export-card">
-            <h3>💰 Ventas</h3>
-            <p>Folio, fecha, cajero, método de pago, descuento y total de cada venta.</p>
-            <button class="btn btn-primary" onclick="exportar('ventas')">⬇️ Descargar Ventas</button>
-          </div>
-          <div class="export-card">
-            <h3>🧾 Detalle de Productos Vendidos</h3>
-            <p>Qué productos se vendieron en cada venta, cantidad y precio unitario.</p>
-            <button class="btn btn-primary" onclick="exportar('detalle-ventas')">⬇️ Descargar Detalle</button>
-          </div>
-          <div class="export-card">
-            <h3>📦 Inventario Actual</h3>
-            <p>Lista completa de productos con precios, stock actual y mínimo.</p>
-            <button class="btn btn-primary" onclick="exportar('inventario')">⬇️ Descargar Inventario</button>
-          </div>
-          <div class="export-card">
-            <h3>🧾 Cortes de Caja</h3>
-            <p>Historial de todos los cortes con desglose por método de pago.</p>
-            <button class="btn btn-primary" onclick="exportar('cortes')">⬇️ Descargar Cortes</button>
-          </div>
+          <div class="export-card"><h3>💰 Ventas</h3><p>Folio, fecha, cajero, método de pago, descuento y total de cada venta.</p><button class="btn btn-primary" onclick="exportar('ventas')">⬇️ Descargar Ventas</button></div>
+          <div class="export-card"><h3>🧾 Detalle de Productos Vendidos</h3><p>Qué productos se vendieron en cada venta, cantidad y precio unitario.</p><button class="btn btn-primary" onclick="exportar('detalle-ventas')">⬇️ Descargar Detalle</button></div>
+          <div class="export-card"><h3>📦 Inventario Actual</h3><p>Lista completa de productos con precios, stock actual y mínimo.</p><button class="btn btn-primary" onclick="exportar('inventario')">⬇️ Descargar Inventario</button></div>
+          <div class="export-card"><h3>🧾 Cortes de Caja</h3><p>Historial de todos los cortes con desglose por método de pago.</p><button class="btn btn-primary" onclick="exportar('cortes')">⬇️ Descargar Cortes</button></div>
         </div>
-
         <div class="table-card" style="padding:24px">
           <h3 style="font-family:'Syne',sans-serif;font-size:16px;font-weight:700;margin-bottom:8px">🗄️ Backup de Base de Datos</h3>
           <p style="font-size:13px;color:var(--muted);margin-bottom:16px">Descarga una copia completa de tu base de datos. Guárdala en un lugar seguro regularmente.</p>
@@ -368,22 +413,72 @@ tr:hover td { background:#fafaf8; }
   </div>
 </div>
 
-<!-- MODALES -->
+<!-- ===================== MODALES ===================== -->
+
+<!-- Modal Producto -->
 <div class="modal-overlay" id="modalProducto">
   <div class="modal">
     <h2 id="modalProdTitle">Nuevo Producto</h2>
     <input type="hidden" id="prodId">
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
       <div class="form-group" style="grid-column:1/-1"><label>Código de barras *</label><input id="prodCodigo" placeholder="Escanea o escribe el código"></div>
-      <div class="form-group" style="grid-column:1/-1"><label>Nombre del producto *</label><input id="prodNombre" placeholder="Ej: Coca Cola 600ml"></div>
+      <div class="form-group" style="grid-column:1/-1"><label>Nombre del producto *</label><input id="prodNombre" placeholder="Ej: Cloro 5L"></div>
       <div class="form-group"><label>Categoría</label>
         <select id="prodCategoria"><option>Abarrotes</option><option>Bebidas</option><option>Lácteos</option><option>Carnes</option><option>Frutas y Verduras</option><option>Limpieza</option><option>Cuidado Personal</option><option>Botanas</option><option>General</option></select>
       </div>
-      <div class="form-group"><label>Unidad</label><input id="prodUnidad" placeholder="pza, kg, lt..." value="pza"></div>
+      <div class="form-group"><label>Tipo de venta</label>
+        <select id="prodTipoVenta" onchange="toggleGranelFields()">
+          <option value="pieza">Por pieza / unidad</option>
+          <option value="granel_liquido">A granel — Líquido (lt / ml)</option>
+          <option value="granel_solido">A granel — Sólido (kg / g)</option>
+        </select>
+      </div>
+
+      <!-- Campos normales -->
+      <div id="camposNormales" style="display:contents">
+        <div class="form-group"><label>Unidad</label><input id="prodUnidad" placeholder="pza, kg, lt..." value="pza"></div>
+      </div>
+
+      <!-- Campos granel (ocultos por defecto) -->
+      <div id="camposGranel" style="display:none;grid-column:1/-1">
+        <div style="background:#f5f3ff;border:1px solid #c4b5fd;border-radius:10px;padding:14px;margin-bottom:12px">
+          <div style="font-size:12px;font-weight:700;color:#6d28d9;margin-bottom:10px;text-transform:uppercase;letter-spacing:1px">⚖️ Configuración a granel</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+            <div class="form-group" style="margin:0">
+              <label id="labelUnidadGranel">Unidad de inventario</label>
+              <select id="prodUnidadGranel">
+                <option value="lt">Litros (lt)</option>
+                <option value="kg">Kilogramos (kg)</option>
+              </select>
+            </div>
+            <div class="form-group" style="margin:0">
+              <label id="labelUnidadVenta">Unidad de venta al cliente</label>
+              <select id="prodUnidadVenta">
+                <option value="ml">Mililitros (ml)</option>
+                <option value="lt">Litros (lt)</option>
+              </select>
+            </div>
+          </div>
+          <div style="font-size:11px;color:#7c3aed;margin-top:8px;font-family:'JetBrains Mono',monospace" id="granelExplica">
+            📦 El stock se guarda en litros. Al vender, el cajero escribe cuántos ml vende y se descuenta automáticamente.
+          </div>
+        </div>
+      </div>
+
       <div class="form-group"><label>Precio de compra</label><input type="number" id="prodPrecioCompra" placeholder="0.00" step="0.01"></div>
-      <div class="form-group"><label>Precio de venta *</label><input type="number" id="prodPrecioVenta" placeholder="0.00" step="0.01"></div>
-      <div class="form-group"><label>Stock inicial</label><input type="number" id="prodStock" placeholder="0"></div>
-      <div class="form-group"><label>Stock mínimo (alerta)</label><input type="number" id="prodStockMin" placeholder="5"></div>
+      <div class="form-group">
+        <label id="labelPrecioVenta">Precio de venta *</label>
+        <input type="number" id="prodPrecioVenta" placeholder="0.00" step="0.01">
+        <div id="hintPrecioVenta" style="font-size:11px;color:var(--muted);margin-top:4px"></div>
+      </div>
+      <div class="form-group">
+        <label id="labelStock">Stock inicial</label>
+        <input type="number" id="prodStock" placeholder="0" step="0.001">
+      </div>
+      <div class="form-group">
+        <label id="labelStockMin">Stock mínimo (alerta)</label>
+        <input type="number" id="prodStockMin" placeholder="5" step="0.001">
+      </div>
     </div>
     <div class="modal-footer">
       <button class="btn btn-secondary" onclick="closeModal('modalProducto')">Cancelar</button>
@@ -392,13 +487,18 @@ tr:hover td { background:#fafaf8; }
   </div>
 </div>
 
+<!-- Modal Stock -->
 <div class="modal-overlay" id="modalStock">
   <div class="modal">
     <h2>Ajustar Stock</h2>
     <input type="hidden" id="stockProdId">
     <div id="stockProdNombre" style="font-weight:700;margin-bottom:16px;color:var(--accent)"></div>
+    <div id="stockGranelInfo"></div>
     <div class="form-group"><label>Tipo de movimiento</label><select id="stockTipo"><option value="entrada">Entrada (compra/devolución)</option><option value="salida">Salida (pérdida/merma)</option></select></div>
-    <div class="form-group"><label>Cantidad</label><input type="number" id="stockCantidad" min="1" value="1"></div>
+    <div class="form-group">
+      <label id="stockCantLabel">Cantidad</label>
+      <input type="number" id="stockCantidad" min="0.001" step="0.001" value="1">
+    </div>
     <div class="form-group"><label>Nota</label><input id="stockNota" placeholder="Motivo del movimiento"></div>
     <div class="modal-footer">
       <button class="btn btn-secondary" onclick="closeModal('modalStock')">Cancelar</button>
@@ -407,6 +507,7 @@ tr:hover td { background:#fafaf8; }
   </div>
 </div>
 
+<!-- Modal Venta -->
 <div class="modal-overlay" id="modalVenta">
   <div class="modal">
     <h2 id="modalVentaTitle">Detalle de Venta</h2>
@@ -415,6 +516,7 @@ tr:hover td { background:#fafaf8; }
   </div>
 </div>
 
+<!-- Modal Usuario -->
 <div class="modal-overlay" id="modalUsuario">
   <div class="modal">
     <h2>Nuevo Usuario</h2>
@@ -429,6 +531,29 @@ tr:hover td { background:#fafaf8; }
   </div>
 </div>
 
+<!-- Modal Granel: pedir cantidad al agregar al carrito -->
+<div class="modal-overlay" id="modalGranel">
+  <div class="modal" style="max-width:360px">
+    <h2 id="granelModalTitle">Vender a granel</h2>
+    <input type="hidden" id="granelProdId">
+    <div id="granelProdInfo" style="margin-bottom:16px;font-size:13px;color:var(--muted)"></div>
+    <div class="granel-info" id="granelStockInfo"></div>
+    <div class="form-group">
+      <label id="granelCantLabel">Cantidad a vender</label>
+      <div class="granel-input-row">
+        <input type="number" id="granelCantidad" min="0.001" step="1" placeholder="0">
+        <span id="granelUnidadLabel">ml</span>
+      </div>
+      <div style="font-size:11px;color:var(--muted);margin-top:6px" id="granelEquivInfo"></div>
+    </div>
+    <div style="font-size:13px;color:var(--accent);font-weight:700;margin-bottom:8px" id="granelPrecioPreview"></div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeModal('modalGranel')">Cancelar</button>
+      <button class="btn btn-primary" onclick="confirmarGranel()">Agregar al carrito</button>
+    </div>
+  </div>
+</div>
+
 <script>
 const API = '';
 let token = localStorage.getItem('token');
@@ -436,6 +561,38 @@ let user = null;
 try { user = JSON.parse(localStorage.getItem('user') || 'null'); } catch(e) { user = null; }
 let carrito = [], metodoPago = 'efectivo', camActiva = false, productosCache = [];
 
+// ===================== HELPERS GRANEL =====================
+// Factor de conversión: cuántas unidades de venta hay en 1 unidad de inventario
+function factorGranel(unidadInv, unidadVenta) {
+  // líquidos
+  if (unidadInv === 'lt' && unidadVenta === 'ml') return 1000;
+  if (unidadInv === 'lt' && unidadVenta === 'lt') return 1;
+  // sólidos
+  if (unidadInv === 'kg' && unidadVenta === 'g') return 1000;
+  if (unidadInv === 'kg' && unidadVenta === 'kg') return 1;
+  return 1;
+}
+
+function esGranel(prod) {
+  return prod.tipo_venta === 'granel_liquido' || prod.tipo_venta === 'granel_solido';
+}
+
+// Precio por unidad de venta: precio_venta está guardado por unidad de inventario
+// Ej: cloro $50/lt → precio por ml = 50/1000 = $0.05
+function precioPorUnidadVenta(prod) {
+  if (!esGranel(prod)) return prod.precio_venta;
+  const factor = factorGranel(prod.unidad_inventario || prod.unidad, prod.unidad_venta || 'ml');
+  return prod.precio_venta / factor;
+}
+
+// Cuánto stock se descuenta en unidades de inventario dado una cantidad en unidades de venta
+function stockADescontar(prod, cantidadVenta) {
+  if (!esGranel(prod)) return cantidadVenta;
+  const factor = factorGranel(prod.unidad_inventario || prod.unidad, prod.unidad_venta || 'ml');
+  return cantidadVenta / factor;
+}
+
+// ===================== API =====================
 async function api(method, path, body) {
   const res = await fetch(API + '/api' + path, {
     method, headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
@@ -446,6 +603,7 @@ async function api(method, path, body) {
   return data;
 }
 
+// ===================== AUTH =====================
 async function login() {
   const email = document.getElementById('loginEmail').value;
   const password = document.getElementById('loginPassword').value;
@@ -485,11 +643,22 @@ function initApp() {
   loadProductosPos();
 }
 
+// ===================== SIDEBAR MÓVIL =====================
+function toggleSidebar() {
+  document.querySelector('.sidebar').classList.toggle('open');
+  document.getElementById('sidebarOverlay').classList.toggle('open');
+}
+function closeSidebar() {
+  document.querySelector('.sidebar').classList.remove('open');
+  document.getElementById('sidebarOverlay').classList.remove('open');
+}
+
 function showPage(page, el) {
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
   document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
   document.getElementById('page-' + page).classList.add('active');
   if (el) el.classList.add('active');
+  if (window.innerWidth <= 768) closeSidebar();
   if (page === 'inventario') loadInventario();
   if (page === 'ventas') { resetVentasFiltro(); loadVentas(); }
   if (page === 'corte') loadCortes();
@@ -498,6 +667,7 @@ function showPage(page, el) {
   if (page === 'exportar') setExportHoy();
 }
 
+// ===================== DASHBOARD =====================
 async function loadDashboard() {
   try {
     const d = await api('GET', '/dashboard');
@@ -535,17 +705,27 @@ async function toggleCajero(id, nombre, bloquear) {
   catch(e) { alert(e.message); }
 }
 
+// ===================== PUNTO DE VENTA =====================
 async function loadProductosPos() {
   try { productosCache = await api('GET', '/productos'); renderPosProductos(productosCache); } catch(e) {}
 }
 
 function renderPosProductos(prods) {
-  document.getElementById('posProductos').innerHTML = prods.slice(0,50).map(p =>
-    `<div class="prod-card" onclick="addToCart(${p.id})">
+  document.getElementById('posProductos').innerHTML = prods.slice(0,60).map(p => {
+    const granelTag = esGranel(p) ? `<div class="granel-badge">${p.unidad_inventario||p.unidad}</div>` : '';
+    const precioLabel = esGranel(p)
+      ? `$${precioPorUnidadVenta(p).toFixed(3)}/${p.unidad_venta||'ml'}`
+      : `$${p.precio_venta.toFixed(2)}`;
+    const stockLabel = esGranel(p)
+      ? `${parseFloat(p.stock).toFixed(3)} ${p.unidad_inventario||p.unidad}`
+      : `${p.stock} ${p.unidad}`;
+    return `<div class="prod-card" onclick="${esGranel(p)?`abrirModalGranel(${p.id})`:`addToCart(${p.id})`}">
+      ${granelTag}
       <div class="pname">${p.nombre}</div>
-      <div class="pprice">$${p.precio_venta.toFixed(2)}</div>
-      <div class="pstock ${p.stock<=p.stock_minimo?'stock-low':'stock-ok'}">${p.stock} ${p.unidad}</div>
-    </div>`).join('') || '<div style="color:var(--muted);font-size:13px">Sin productos.</div>';
+      <div class="pprice">${precioLabel}</div>
+      <div class="pstock ${p.stock<=p.stock_minimo?'stock-low':'stock-ok'}">${stockLabel}</div>
+    </div>`;
+  }).join('') || '<div style="color:var(--muted);font-size:13px">Sin productos.</div>';
 }
 
 function scanEnter(e) {
@@ -553,18 +733,101 @@ function scanEnter(e) {
   const val = document.getElementById('scanInput').value.trim();
   if (!val) return;
   const prod = productosCache.find(p => p.codigo === val || p.nombre.toLowerCase().includes(val.toLowerCase()));
-  if (prod) { addToCart(prod.id); document.getElementById('scanInput').value = ''; }
-  else showPosAlert('Producto no encontrado: ' + val, 'error');
+  if (prod) {
+    if (esGranel(prod)) { abrirModalGranel(prod.id); }
+    else { addToCart(prod.id); }
+    document.getElementById('scanInput').value = '';
+  } else { showPosAlert('Producto no encontrado: ' + val, 'error'); }
 }
 
 function addToCart(prodId) {
   const prod = productosCache.find(p => p.id === prodId);
   if (!prod) return;
   if (prod.stock <= 0) return showPosAlert('Sin stock: ' + prod.nombre, 'error');
-  const exist = carrito.find(c => c.producto_id === prodId);
+  const exist = carrito.find(c => c.producto_id === prodId && !c.esGranel);
   if (exist) { if (exist.cantidad >= prod.stock) return showPosAlert('Stock máximo', 'warn'); exist.cantidad++; }
-  else carrito.push({ producto_id:prodId, nombre:prod.nombre, precio:prod.precio_venta, cantidad:1, stock:prod.stock });
+  else carrito.push({ producto_id:prodId, nombre:prod.nombre, precio:prod.precio_venta, cantidad:1, stock:prod.stock, esGranel:false });
   renderCart();
+}
+
+// ===================== GRANEL EN CARRITO =====================
+let granelProdActual = null;
+
+function abrirModalGranel(prodId) {
+  const prod = productosCache.find(p => p.id === prodId);
+  if (!prod) return;
+  granelProdActual = prod;
+
+  const unidadInv = prod.unidad_inventario || prod.unidad;
+  const unidadVenta = prod.unidad_venta || 'ml';
+  const precioPorU = precioPorUnidadVenta(prod);
+  const stockDisp = parseFloat(prod.stock);
+  const factor = factorGranel(unidadInv, unidadVenta);
+  const stockEnVenta = (stockDisp * factor).toFixed(0);
+
+  document.getElementById('granelProdId').value = prodId;
+  document.getElementById('granelModalTitle').textContent = prod.nombre;
+  document.getElementById('granelProdInfo').textContent = prod.categoria + ' · ' + prod.tipo_venta.replace('granel_','').replace('liquido','Líquido').replace('solido','Sólido');
+  document.getElementById('granelStockInfo').textContent = `📦 Disponible: ${stockDisp.toFixed(3)} ${unidadInv} (${stockEnVenta} ${unidadVenta})`;
+  document.getElementById('granelCantLabel').textContent = `Cantidad a vender (${unidadVenta})`;
+  document.getElementById('granelUnidadLabel').textContent = unidadVenta;
+  document.getElementById('granelEquivInfo').textContent = `Precio: $${precioPorU.toFixed(4)} por ${unidadVenta}`;
+  document.getElementById('granelCantidad').value = '';
+  document.getElementById('granelPrecioPreview').textContent = '';
+
+  document.getElementById('granelCantidad').oninput = function() {
+    const cant = parseFloat(this.value) || 0;
+    const total = cant * precioPorU;
+    const descuenta = stockADescontar(prod, cant);
+    document.getElementById('granelPrecioPreview').textContent =
+      cant > 0 ? `💰 Total: $${total.toFixed(2)} — descuenta ${descuenta.toFixed(4)} ${unidadInv}` : '';
+  };
+
+  openModal('modalGranel');
+}
+
+function confirmarGranel() {
+  const prod = granelProdActual;
+  if (!prod) return;
+  const cantVenta = parseFloat(document.getElementById('granelCantidad').value);
+  if (!cantVenta || cantVenta <= 0) return alert('Escribe una cantidad válida');
+
+  const unidadInv = prod.unidad_inventario || prod.unidad;
+  const unidadVenta = prod.unidad_venta || 'ml';
+  const descuenta = stockADescontar(prod, cantVenta);
+
+  if (descuenta > parseFloat(prod.stock)) {
+    return showPosAlert(`Stock insuficiente. Disponible: ${parseFloat(prod.stock).toFixed(3)} ${unidadInv}`, 'error');
+  }
+
+  const precioPorU = precioPorUnidadVenta(prod);
+  const precioTotal = cantVenta * precioPorU;
+
+  // Buscar si ya hay un item granel del mismo producto en el carrito
+  const exist = carrito.find(c => c.producto_id === prod.id && c.esGranel);
+  if (exist) {
+    exist.cantidadVenta += cantVenta;
+    exist.cantidad = stockADescontar(prod, exist.cantidadVenta); // en unidades de inv
+    exist.precio = exist.cantidadVenta * precioPorU; // precio total acumulado
+    exist.precioUnitario = precioPorU;
+  } else {
+    carrito.push({
+      producto_id: prod.id,
+      nombre: `${prod.nombre} (${cantVenta}${unidadVenta})`,
+      precio: precioTotal,
+      precioUnitario: precioPorU,
+      cantidad: descuenta,        // en unidades de inventario para descontar
+      cantidadVenta: cantVenta,   // en unidades de venta para mostrar
+      unidadVenta: unidadVenta,
+      unidadInv: unidadInv,
+      stock: parseFloat(prod.stock),
+      esGranel: true
+    });
+  }
+
+  closeModal('modalGranel');
+  renderCart();
+  showPosAlert(`✅ ${prod.nombre} — ${cantVenta}${unidadVenta} agregado`, 'success');
 }
 
 function renderCart() {
@@ -574,17 +837,43 @@ function renderCart() {
     document.getElementById('cartTotal').textContent = '$0.00';
     return;
   }
-  document.getElementById('cartItems').innerHTML = carrito.map((c,i) =>
-    `<div class="cart-item">
-      <div><div class="cart-item-name">${c.nombre}</div><div class="cart-item-price">$${c.precio.toFixed(2)} c/u</div></div>
-      <div class="qty-ctrl"><button class="qty-btn" onclick="changeQty(${i},-1)">−</button><span class="qty-num">${c.cantidad}</span><button class="qty-btn" onclick="changeQty(${i},1)">+</button></div>
-      <div style="font-family:'JetBrains Mono',monospace;font-size:13px;font-weight:700;min-width:60px;text-align:right">$${(c.precio*c.cantidad).toFixed(2)}</div>
+  document.getElementById('cartItems').innerHTML = carrito.map((c,i) => {
+    const labelCant = c.esGranel
+      ? `${c.cantidadVenta}${c.unidadVenta}`
+      : `x${c.cantidad}`;
+    const labelPrecio = c.esGranel
+      ? `$${c.precioUnitario.toFixed(4)}/${c.unidadVenta}`
+      : `$${c.precio.toFixed(2)} c/u`;
+    const totalItem = c.esGranel ? c.precio : c.precio * c.cantidad;
+    return `<div class="cart-item">
+      <div style="flex:1">
+        <div class="cart-item-name">${c.esGranel ? c.nombre.split(' (')[0] : c.nombre}</div>
+        <div class="cart-item-price">${labelCant} · ${labelPrecio}</div>
+      </div>
+      ${c.esGranel
+        ? `<button onclick="editarGranelCart(${i})" style="background:none;border:none;cursor:pointer;font-size:13px;color:var(--accent)">✏️</button>`
+        : `<div class="qty-ctrl"><button class="qty-btn" onclick="changeQty(${i},-1)">−</button><span class="qty-num">${c.cantidad}</span><button class="qty-btn" onclick="changeQty(${i},1)">+</button></div>`
+      }
+      <div style="font-family:'JetBrains Mono',monospace;font-size:13px;font-weight:700;min-width:60px;text-align:right">$${totalItem.toFixed(2)}</div>
       <button onclick="removeFromCart(${i})" style="background:none;border:none;cursor:pointer;color:var(--danger);font-size:16px">✕</button>
-    </div>`).join('');
-  const sub = carrito.reduce((s,c) => s+c.precio*c.cantidad, 0);
+    </div>`;
+  }).join('');
+  const sub = carrito.reduce((s,c) => s + (c.esGranel ? c.precio : c.precio*c.cantidad), 0);
   const desc = parseFloat(document.getElementById('cartDescuento').value) || 0;
   document.getElementById('cartSubtotal').textContent = '$' + sub.toFixed(2);
   document.getElementById('cartTotal').textContent = '$' + (sub-desc).toFixed(2);
+}
+
+function editarGranelCart(i) {
+  // Re-abrir modal granel con el mismo producto para agregar/cambiar cantidad
+  const item = carrito[i];
+  const prod = productosCache.find(p => p.id === item.producto_id);
+  if (!prod) return;
+  carrito.splice(i, 1); // quitar temporalmente
+  // Restaurar stock disponible
+  prod.stock = (parseFloat(prod.stock) + item.cantidad).toString();
+  renderCart();
+  abrirModalGranel(prod.id);
 }
 
 function changeQty(i,delta) { carrito[i].cantidad+=delta; if(carrito[i].cantidad<=0) carrito.splice(i,1); renderCart(); }
@@ -595,8 +884,16 @@ function selectPago(m) { metodoPago=m; document.querySelectorAll('.pay-btn').for
 async function cobrar() {
   if (!carrito.length) return showPosAlert('Carrito vacío', 'warn');
   const desc = parseFloat(document.getElementById('cartDescuento').value) || 0;
+  // Construir items para el servidor
+  const items = carrito.map(c => ({
+    producto_id: c.producto_id,
+    cantidad: c.cantidad,                  // siempre en unidades de inventario
+    cantidad_venta: c.esGranel ? c.cantidadVenta : c.cantidad,
+    unidad_venta: c.esGranel ? c.unidadVenta : null,
+    es_granel: c.esGranel || false
+  }));
   try {
-    const r = await api('POST', '/ventas', { items:carrito.map(c=>({producto_id:c.producto_id,cantidad:c.cantidad})), metodo_pago:metodoPago, descuento:desc });
+    const r = await api('POST', '/ventas', { items, metodo_pago:metodoPago, descuento:desc });
     showPosAlert(`✅ Venta ${r.folio} — $${r.total.toFixed(2)}`, 'success');
     limpiarCarrito(); await loadProductosPos(); loadDashboard();
   } catch(e) { showPosAlert(e.message, 'error'); }
@@ -605,7 +902,7 @@ async function cobrar() {
 function showPosAlert(msg,type) {
   const el = document.getElementById('posAlert');
   el.innerHTML = `<div class="alert alert-${type}">${msg}</div>`;
-  setTimeout(()=>el.innerHTML='',3000);
+  setTimeout(()=>el.innerHTML='',3500);
 }
 
 function toggleCam() {
@@ -620,12 +917,16 @@ function toggleCam() {
       const code=result.codeResult.code;
       document.getElementById('scanInput').value=code;
       const prod=productosCache.find(p=>p.codigo===code);
-      if(prod){addToCart(prod.id);document.getElementById('scanInput').value='';}
-      else showPosAlert('Código no registrado: '+code,'warn');
+      if(prod){
+        if(esGranel(prod)) abrirModalGranel(prod.id);
+        else addToCart(prod.id);
+        document.getElementById('scanInput').value='';
+      } else { showPosAlert('Código no registrado: '+code,'warn'); }
     });
   }
 }
 
+// ===================== INVENTARIO =====================
 async function loadInventario() {
   const buscar=document.getElementById('invBuscar').value;
   const categoria=document.getElementById('invCategoria').value;
@@ -636,20 +937,62 @@ async function loadInventario() {
   if(bajo_stock) qs.set('bajo_stock','1');
   const prods=await api('GET','/productos?'+qs.toString());
   productosCache=prods;
-  document.getElementById('invTable').innerHTML=prods.map(p=>
-    `<tr>
+  document.getElementById('invTable').innerHTML=prods.map(p=>{
+    const tipoLabel = esGranel(p)
+      ? `<span class="badge badge-purple">${p.tipo_venta==='granel_liquido'?'💧 Líquido':'⚖️ Sólido'}</span>`
+      : `<span class="badge badge-blue">pieza</span>`;
+    const stockLabel = esGranel(p)
+      ? `${parseFloat(p.stock).toFixed(3)} ${p.unidad_inventario||p.unidad}`
+      : `${p.stock} ${p.unidad}`;
+    const precioLabel = esGranel(p)
+      ? `$${p.precio_venta.toFixed(2)}/${p.unidad_inventario||p.unidad} <span style="font-size:10px;color:var(--muted)">(≈$${precioPorUnidadVenta(p).toFixed(4)}/${p.unidad_venta||'ml'})</span>`
+      : `$${p.precio_venta.toFixed(2)}`;
+    return `<tr>
       <td style="font-family:'JetBrains Mono',monospace">${p.codigo}</td>
       <td style="font-weight:600">${p.nombre}</td>
       <td><span class="badge badge-blue">${p.categoria}</span></td>
-      <td style="font-family:'JetBrains Mono',monospace">$${p.precio_venta.toFixed(2)}</td>
-      <td class="${p.stock<=p.stock_minimo?'stock-low':'stock-ok'}" style="font-weight:700">${p.stock} ${p.unidad}</td>
+      <td style="font-family:'JetBrains Mono',monospace">${precioLabel}</td>
+      <td class="${p.stock<=p.stock_minimo?'stock-low':'stock-ok'}" style="font-weight:700">${stockLabel}</td>
       <td>${p.stock_minimo}</td>
+      <td>${tipoLabel}</td>
       <td style="display:flex;gap:6px">
         <button class="btn btn-secondary btn-sm" onclick="editarProducto(${p.id})">✏️</button>
         <button class="btn btn-secondary btn-sm" onclick="abrirStock(${p.id},'${p.nombre.replace(/'/g,"\\'")}')">📦</button>
         ${user.rol==='dueno'?`<button class="btn btn-danger btn-sm" onclick="eliminarProducto(${p.id})">🗑</button>`:''}
       </td>
-    </tr>`).join('') || '<tr><td colspan="7" style="text-align:center;color:var(--muted);padding:20px">Sin productos</td></tr>';
+    </tr>`;
+  }).join('') || '<tr><td colspan="8" style="text-align:center;color:var(--muted);padding:20px">Sin productos</td></tr>';
+}
+
+// ===================== MODAL PRODUCTO — GRANEL FIELDS =====================
+function toggleGranelFields() {
+  const tipo = document.getElementById('prodTipoVenta').value;
+  const esG = tipo !== 'pieza';
+  document.getElementById('camposNormales').style.display = esG ? 'none' : 'contents';
+  document.getElementById('camposGranel').style.display = esG ? 'block' : 'none';
+
+  if (tipo === 'granel_liquido') {
+    document.getElementById('prodUnidadGranel').innerHTML = '<option value="lt">Litros (lt)</option>';
+    document.getElementById('prodUnidadVenta').innerHTML = '<option value="ml">Mililitros (ml)</option><option value="lt">Litros (lt)</option>';
+    document.getElementById('labelPrecioVenta').textContent = 'Precio de venta por litro *';
+    document.getElementById('hintPrecioVenta').textContent = 'Ej: $50 por litro → el sistema calcula $0.05 por ml';
+    document.getElementById('labelStock').textContent = 'Stock inicial (litros)';
+    document.getElementById('labelStockMin').textContent = 'Stock mínimo (litros)';
+    document.getElementById('granelExplica').textContent = '📦 Stock en litros. Al vender, cajero escribe ml y se descuenta automáticamente.';
+  } else if (tipo === 'granel_solido') {
+    document.getElementById('prodUnidadGranel').innerHTML = '<option value="kg">Kilogramos (kg)</option>';
+    document.getElementById('prodUnidadVenta').innerHTML = '<option value="g">Gramos (g)</option><option value="kg">Kilogramos (kg)</option>';
+    document.getElementById('labelPrecioVenta').textContent = 'Precio de venta por kg *';
+    document.getElementById('hintPrecioVenta').textContent = 'Ej: $30 por kg → el sistema calcula $0.03 por gramo';
+    document.getElementById('labelStock').textContent = 'Stock inicial (kg)';
+    document.getElementById('labelStockMin').textContent = 'Stock mínimo (kg)';
+    document.getElementById('granelExplica').textContent = '📦 Stock en kg. Al vender, cajero escribe gramos y se descuenta automáticamente.';
+  } else {
+    document.getElementById('labelPrecioVenta').textContent = 'Precio de venta *';
+    document.getElementById('hintPrecioVenta').textContent = '';
+    document.getElementById('labelStock').textContent = 'Stock inicial';
+    document.getElementById('labelStockMin').textContent = 'Stock mínimo (alerta)';
+  }
 }
 
 function nuevoProducto() {
@@ -657,12 +1000,14 @@ function nuevoProducto() {
   document.getElementById('prodCodigo').value='';
   document.getElementById('prodNombre').value='';
   document.getElementById('prodCategoria').value='General';
+  document.getElementById('prodTipoVenta').value='pieza';
   document.getElementById('prodUnidad').value='pza';
   document.getElementById('prodPrecioCompra').value='';
   document.getElementById('prodPrecioVenta').value='';
   document.getElementById('prodStock').value='';
   document.getElementById('prodStockMin').value='5';
   document.getElementById('modalProdTitle').textContent='Nuevo Producto';
+  toggleGranelFields();
   openModal('modalProducto');
 }
 
@@ -675,26 +1020,37 @@ function editarProducto(id) {
   document.getElementById('prodCodigo').value=p.codigo||'';
   document.getElementById('prodNombre').value=p.nombre||'';
   document.getElementById('prodCategoria').value=p.categoria||'General';
+  document.getElementById('prodTipoVenta').value=p.tipo_venta||'pieza';
   document.getElementById('prodUnidad').value=p.unidad||'pza';
   document.getElementById('prodPrecioCompra').value=p.precio_compra||0;
   document.getElementById('prodPrecioVenta').value=p.precio_venta||'';
   document.getElementById('prodStock').value=p.stock||0;
   document.getElementById('prodStockMin').value=p.stock_minimo||5;
+  toggleGranelFields();
+  // set granel selects
+  if (p.tipo_venta && p.tipo_venta !== 'pieza') {
+    if (p.unidad_inventario) document.getElementById('prodUnidadGranel').value = p.unidad_inventario;
+    if (p.unidad_venta) document.getElementById('prodUnidadVenta').value = p.unidad_venta;
+  }
   document.getElementById('modalProdTitle').textContent='Editar Producto';
   openModal('modalProducto');
 }
 
 async function guardarProducto() {
   const id=document.getElementById('prodId').value;
+  const tipoVenta=document.getElementById('prodTipoVenta').value;
   const data={
     codigo:document.getElementById('prodCodigo').value,
     nombre:document.getElementById('prodNombre').value,
     categoria:document.getElementById('prodCategoria').value,
-    unidad:document.getElementById('prodUnidad').value,
+    tipo_venta: tipoVenta,
+    unidad: tipoVenta==='pieza' ? document.getElementById('prodUnidad').value : document.getElementById('prodUnidadGranel').value,
+    unidad_inventario: tipoVenta!=='pieza' ? document.getElementById('prodUnidadGranel').value : null,
+    unidad_venta: tipoVenta!=='pieza' ? document.getElementById('prodUnidadVenta').value : null,
     precio_compra:parseFloat(document.getElementById('prodPrecioCompra').value)||0,
     precio_venta:parseFloat(document.getElementById('prodPrecioVenta').value),
-    stock:parseInt(document.getElementById('prodStock').value)||0,
-    stock_minimo:parseInt(document.getElementById('prodStockMin').value)||5
+    stock:parseFloat(document.getElementById('prodStock').value)||0,
+    stock_minimo:parseFloat(document.getElementById('prodStockMin').value)||5
   };
   try {
     if(id) await api('PUT','/productos/'+id,data);
@@ -710,20 +1066,34 @@ async function eliminarProducto(id) {
 }
 
 function abrirStock(id,nombre) {
+  const prod = productosCache.find(p=>p.id===id);
   document.getElementById('stockProdId').value=id;
   document.getElementById('stockProdNombre').textContent=nombre;
+  if (prod && esGranel(prod)) {
+    const unidadInv = prod.unidad_inventario||prod.unidad;
+    document.getElementById('stockGranelInfo').innerHTML=`<div class="granel-info">⚖️ Producto a granel — ingresa en <strong>${unidadInv}</strong><br>Stock actual: ${parseFloat(prod.stock).toFixed(3)} ${unidadInv}</div>`;
+    document.getElementById('stockCantLabel').textContent=`Cantidad (${unidadInv})`;
+    document.getElementById('stockCantidad').step='0.001';
+    document.getElementById('stockCantidad').value='1';
+  } else {
+    document.getElementById('stockGranelInfo').innerHTML='';
+    document.getElementById('stockCantLabel').textContent='Cantidad';
+    document.getElementById('stockCantidad').step='1';
+    document.getElementById('stockCantidad').value='1';
+  }
   openModal('modalStock');
 }
 
 async function guardarStock() {
   const id=document.getElementById('stockProdId').value;
   const tipo=document.getElementById('stockTipo').value;
-  const cantidad=parseInt(document.getElementById('stockCantidad').value);
+  const cantidad=parseFloat(document.getElementById('stockCantidad').value);
   const nota=document.getElementById('stockNota').value;
   try { await api('PATCH','/productos/'+id+'/stock',{tipo,cantidad,nota}); closeModal('modalStock'); loadInventario(); loadProductosPos(); }
   catch(e) { alert(e.message); }
 }
 
+// ===================== VENTAS =====================
 function resetVentasFiltro() {
   const hoy=new Date().toISOString().split('T')[0];
   document.getElementById('ventasDesde').value=hoy;
@@ -752,7 +1122,12 @@ async function verVenta(id) {
     <div style="margin-bottom:12px;font-size:13px;color:var(--muted)">${new Date(v.creado_en).toLocaleString('es-MX')} · ${v.cajero||'—'} · ${v.metodo_pago}</div>
     <table style="width:100%;font-size:13px">
       <thead><tr><th>Producto</th><th>Cant.</th><th>Precio</th><th>Subtotal</th></tr></thead>
-      <tbody>${v.items.map(i=>`<tr><td>${i.nombre}</td><td>${i.cantidad}</td><td>$${i.precio_unitario.toFixed(2)}</td><td>$${i.subtotal.toFixed(2)}</td></tr>`).join('')}</tbody>
+      <tbody>${v.items.map(i=>`<tr>
+        <td>${i.nombre}</td>
+        <td>${i.es_granel && i.cantidad_venta ? `${i.cantidad_venta}${i.unidad_venta||''}` : i.cantidad}</td>
+        <td>$${i.precio_unitario.toFixed(i.es_granel?4:2)}</td>
+        <td>$${i.subtotal.toFixed(2)}</td>
+      </tr>`).join('')}</tbody>
     </table>
     <div style="text-align:right;margin-top:12px;font-family:'JetBrains Mono',monospace">
       ${v.descuento>0?`<div>Descuento: -$${v.descuento.toFixed(2)}</div>`:''}
@@ -761,6 +1136,7 @@ async function verVenta(id) {
   openModal('modalVenta');
 }
 
+// ===================== CORTE =====================
 async function hacerCorte() {
   const desde=document.getElementById('corteDesde').value;
   const notas=document.getElementById('corteNotas').value;
@@ -792,6 +1168,7 @@ async function loadCortes() {
     </tr>`).join('') || '<tr><td colspan="6" style="text-align:center;color:var(--muted)">Sin cortes</td></tr>';
 }
 
+// ===================== USUARIOS =====================
 async function loadUsuarios() {
   const users=await api('GET','/usuarios');
   document.getElementById('usuariosTable').innerHTML=users.map(u=>
@@ -812,6 +1189,7 @@ async function guardarUsuario() {
 
 async function toggleUsuario(id) { await api('PATCH','/usuarios/'+id+'/toggle'); loadUsuarios(); }
 
+// ===================== CAJEROS =====================
 function setCajeroHoy() { document.getElementById('cajeroFecha').value=new Date().toISOString().split('T')[0]; }
 
 async function loadCajerosActividad() {
@@ -843,7 +1221,7 @@ async function loadCajerosActividad() {
   } catch(e) { console.error(e); }
 }
 
-// ===== EXPORTAR =====
+// ===================== EXPORTAR =====================
 function setExportHoy() {
   const hoy=new Date().toISOString().split('T')[0];
   document.getElementById('exportDesde').value=hoy;
@@ -869,17 +1247,14 @@ function exportar(tipo) {
   if(desde) params.push(`desde=${desde}T00:00:00`);
   if(hasta) params.push(`hasta=${hasta}T23:59:59`);
   if(params.length) url+='?'+params.join('&');
-
-  // Crear link temporal con token
-  const a=document.createElement('a');
   fetch(url,{headers:{'Authorization':'Bearer '+token}})
     .then(r=>r.blob())
     .then(blob=>{
-      const objUrl=URL.createObjectURL(blob);
-      a.href=objUrl;
+      const a=document.createElement('a');
+      a.href=URL.createObjectURL(blob);
       a.download=`${tipo}_${new Date().toISOString().split('T')[0]}.csv`;
       a.click();
-      URL.revokeObjectURL(objUrl);
+      URL.revokeObjectURL(a.href);
     }).catch(e=>alert('Error al exportar: '+e.message));
 }
 
@@ -894,6 +1269,7 @@ function descargarBackup() {
     }).catch(e=>alert('Error al descargar backup: '+e.message));
 }
 
+// ===================== INIT =====================
 if(token&&user) initApp();
 else document.getElementById('loginScreen').style.display='flex';
 
