@@ -187,11 +187,11 @@ app.post('/api/auth/login', (req, res) => {
 });
 
 // ===== USUARIOS =====
-app.get('/api/usuarios', authMiddleware, soloCorporativoODueno, (req, res) => {
+app.get('/api/usuarios', authMiddleware, solodueno, (req, res) => {
   res.json(db.prepare('SELECT id, nombre, email, rol, activo, creado_en FROM usuarios').all());
 });
 
-app.post('/api/usuarios', authMiddleware, soloCorporativoODueno, (req, res) => {
+app.post('/api/usuarios', authMiddleware, solodueno, (req, res) => {
   const { nombre, email, password, rol } = req.body;
   const hash = bcrypt.hashSync(password, 10);
   try {
@@ -204,7 +204,7 @@ app.post('/api/usuarios', authMiddleware, soloCorporativoODueno, (req, res) => {
   } catch { res.status(400).json({ error: 'Email ya existe' }); }
 });
 
-app.patch('/api/usuarios/:id/toggle', authMiddleware, soloCorporativoODueno, (req, res) => {
+app.patch('/api/usuarios/:id/toggle', authMiddleware, solodueno, (req, res) => {
   const user = db.prepare('SELECT * FROM usuarios WHERE id = ?').get(req.params.id);
   if (!user) return res.status(404).json({ error: 'Usuario no encontrado' });
   if (user.rol === 'os') return res.status(400).json({ error: 'No puedes desactivar al rol OS' });
