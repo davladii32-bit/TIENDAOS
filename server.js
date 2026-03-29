@@ -17,6 +17,23 @@ app.use(express.static(path.join(__dirname, 'public')));
 const DB_PATH = process.env.DATABASE_PATH || './tienda.db';
 const db = new sqlite3(DB_PATH);
 
+// ===== UTILIDAD TIMEZONE MÉXICO (UTC-6) =====
+function ahoraMexico() {
+  const now = new Date();
+  const offset = -6 * 60;
+  const local = new Date(now.getTime() + offset * 60000);
+  return local.toISOString().replace('T', ' ').substring(0, 19);
+}
+
+function utcAMexico(fechaStr) {
+  if (!fechaStr) return '—';
+  const d = new Date(fechaStr);
+  if (isNaN(d)) return fechaStr;
+  const offset = -6 * 60;
+  const local = new Date(d.getTime() + offset * 60000);
+  return local.toISOString().replace('T', ' ').substring(0, 19);
+}
+
 db.exec(`
   CREATE TABLE IF NOT EXISTS usuarios (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -113,7 +130,7 @@ db.exec(`
   );
 `);
 
-// Migrar columnas granel si no existen (para bases de datos ya creadas)
+// Migrar columnas granel si no existen
 try { db.exec(`ALTER TABLE productos ADD COLUMN tipo_venta TEXT DEFAULT 'pieza'`); } catch(e) {}
 try { db.exec(`ALTER TABLE productos ADD COLUMN unidad_inventario TEXT`); } catch(e) {}
 try { db.exec(`ALTER TABLE productos ADD COLUMN unidad_venta TEXT`); } catch(e) {}
@@ -121,7 +138,7 @@ try { db.exec(`ALTER TABLE venta_items ADD COLUMN cantidad_venta REAL`); } catch
 try { db.exec(`ALTER TABLE venta_items ADD COLUMN unidad_venta TEXT`); } catch(e) {}
 try { db.exec(`ALTER TABLE venta_items ADD COLUMN es_granel INTEGER DEFAULT 0`); } catch(e) {}
 
-// Crear dueño por defecto
+// Crear usuarios por defecto
 const duenoExiste = db.prepare('SELECT id FROM usuarios WHERE rol = ?').get('dueno');
 if (!duenoExiste) {
   const hash = bcrypt.hashSync('dueno123', 10);
@@ -129,7 +146,6 @@ if (!duenoExiste) {
   console.log('✅ Usuario dueño creado: dueno@tienda.com / dueno123');
 }
 
-// Crear usuario OS por defecto si no existe
 const osExiste = db.prepare("SELECT id FROM usuarios WHERE rol = 'os'").get();
 if (!osExiste) {
   const hashOS = bcrypt.hashSync('OS-iker-2026', 10);
@@ -227,11 +243,12 @@ app.get('/api/productos/codigo/:codigo', authMiddleware, (req, res) => {
 app.post('/api/productos', authMiddleware, (req, res) => {
   const { codigo, nombre, categoria, precio_compra, precio_venta, stock, stock_minimo, unidad, tipo_venta, unidad_inventario, unidad_venta } = req.body;
   try {
-    const r = db.prepare(`INSERT INTO productos (codigo, nombre, categoria, precio_compra, precio_venta, stock, stock_minimo, unidad, tipo_venta, unidad_inventario, unidad_venta)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`).run(
+    const r = db.prepare(`INSERT INTO productos (codigo, nombre, categoria, precio_compra, precio_venta, stock, stock_minimo, unidad, tipo_venta, unidad_inventario, unidad_venta, creado_en, actualizado_en)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`).run(
       codigo, nombre, categoria || 'General', precio_compra || 0, precio_venta,
       stock || 0, stock_minimo || 5, unidad || 'pza',
-      tipo_venta || 'pieza', unidad_inventario || null, unidad_venta || null
+      tipo_venta || 'pieza', unidad_inventario || null, unidad_venta || null,
+      ahoraMexico(), ahoraMexico()
     );
     res.json({ id: r.lastInsertRowid, mensaje: 'Producto creado' });
   } catch { res.status(400).json({ error: 'Código ya existe' }); }
@@ -240,8 +257,8 @@ app.post('/api/productos', authMiddleware, (req, res) => {
 app.put('/api/productos/:id', authMiddleware, (req, res) => {
   const { nombre, categoria, precio_compra, precio_venta, stock_minimo, unidad, tipo_venta, unidad_inventario, unidad_venta } = req.body;
   db.prepare(`UPDATE productos SET nombre=?, categoria=?, precio_compra=?, precio_venta=?, stock_minimo=?, unidad=?,
-    tipo_venta=?, unidad_inventario=?, unidad_venta=?, actualizado_en=CURRENT_TIMESTAMP WHERE id=?`
-  ).run(nombre, categoria, precio_compra, precio_venta, stock_minimo, unidad, tipo_venta || 'pieza', unidad_inventario || null, unidad_venta || null, req.params.id);
+    tipo_venta=?, unidad_inventario=?, unidad_venta=?, actualizado_en=? WHERE id=?`
+  ).run(nombre, categoria, precio_compra, precio_venta, stock_minimo, unidad, tipo_venta || 'pieza', unidad_inventario || null, unidad_venta || null, ahoraMexico(), req.params.id);
   res.json({ mensaje: 'Producto actualizado' });
 });
 
@@ -251,8 +268,8 @@ app.patch('/api/productos/:id/stock', authMiddleware, (req, res) => {
   if (!prod) return res.status(404).json({ error: 'Producto no encontrado' });
   const nuevo_stock = tipo === 'entrada' ? prod.stock + cantidad : prod.stock - cantidad;
   if (nuevo_stock < 0) return res.status(400).json({ error: 'Stock insuficiente' });
-  db.prepare('UPDATE productos SET stock = ?, actualizado_en = CURRENT_TIMESTAMP WHERE id = ?').run(nuevo_stock, req.params.id);
-  db.prepare('INSERT INTO movimientos (producto_id, tipo, cantidad, stock_anterior, stock_nuevo, nota, usuario_id) VALUES (?, ?, ?, ?, ?, ?, ?)').run(req.params.id, tipo, cantidad, prod.stock, nuevo_stock, nota || '', req.user.id);
+  db.prepare('UPDATE productos SET stock = ?, actualizado_en = ? WHERE id = ?').run(nuevo_stock, ahoraMexico(), req.params.id);
+  db.prepare('INSERT INTO movimientos (producto_id, tipo, cantidad, stock_anterior, stock_nuevo, nota, usuario_id, creado_en) VALUES (?, ?, ?, ?, ?, ?, ?, ?)').run(req.params.id, tipo, cantidad, prod.stock, nuevo_stock, nota || '', req.user.id, ahoraMexico());
   res.json({ mensaje: 'Stock actualizado', stock_nuevo: nuevo_stock });
 });
 
@@ -281,7 +298,8 @@ app.post('/api/ventas', authMiddleware, (req, res) => {
     }
     total -= (descuento || 0);
 
-    const venta = db.prepare('INSERT INTO ventas (folio, usuario_id, total, descuento, metodo_pago, notas) VALUES (?, ?, ?, ?, ?, ?)').run(folio, req.user.id, total, descuento || 0, metodo_pago || 'efectivo', notas || '');
+    // Guardar con hora México
+    const venta = db.prepare('INSERT INTO ventas (folio, usuario_id, total, descuento, metodo_pago, notas, creado_en) VALUES (?, ?, ?, ?, ?, ?, ?)').run(folio, req.user.id, total, descuento || 0, metodo_pago || 'efectivo', notas || '', ahoraMexico());
 
     for (const item of items) {
       const prod = db.prepare('SELECT * FROM productos WHERE id = ?').get(item.producto_id);
@@ -303,9 +321,9 @@ app.post('/api/ventas', authMiddleware, (req, res) => {
         subtotal
       );
 
-      db.prepare('UPDATE productos SET stock = stock - ?, actualizado_en = CURRENT_TIMESTAMP WHERE id = ?').run(item.cantidad, item.producto_id);
-      db.prepare('INSERT INTO movimientos (producto_id, tipo, cantidad, stock_anterior, stock_nuevo, nota, usuario_id) VALUES (?, ?, ?, ?, ?, ?, ?)').run(
-        item.producto_id, 'venta', item.cantidad, prod.stock, prod.stock - item.cantidad, `Venta ${folio}`, req.user.id
+      db.prepare('UPDATE productos SET stock = stock - ?, actualizado_en = ? WHERE id = ?').run(item.cantidad, ahoraMexico(), item.producto_id);
+      db.prepare('INSERT INTO movimientos (producto_id, tipo, cantidad, stock_anterior, stock_nuevo, nota, usuario_id, creado_en) VALUES (?, ?, ?, ?, ?, ?, ?, ?)').run(
+        item.producto_id, 'venta', item.cantidad, prod.stock, prod.stock - item.cantidad, `Venta ${folio}`, req.user.id, ahoraMexico()
       );
     }
     return venta.lastInsertRowid;
@@ -341,12 +359,12 @@ app.get('/api/ventas/:id', authMiddleware, (req, res) => {
 app.post('/api/cortes', authMiddleware, (req, res) => {
   const { fecha_inicio, notas } = req.body;
   const desde = fecha_inicio || new Date().toISOString().split('T')[0] + 'T00:00:00.000Z';
-  const ventas = db.prepare('SELECT * FROM ventas WHERE creado_en >= ? AND creado_en <= CURRENT_TIMESTAMP').all(desde);
+  const ventas = db.prepare('SELECT * FROM ventas WHERE creado_en >= ?').all(desde);
   const total = ventas.reduce((s, v) => s + v.total, 0);
   const efectivo = ventas.filter(v => v.metodo_pago === 'efectivo').reduce((s, v) => s + v.total, 0);
   const tarjeta = ventas.filter(v => v.metodo_pago === 'tarjeta').reduce((s, v) => s + v.total, 0);
   const transferencia = ventas.filter(v => v.metodo_pago === 'transferencia').reduce((s, v) => s + v.total, 0);
-  const r = db.prepare('INSERT INTO cortes (usuario_id, fecha_inicio, total_ventas, num_ventas, efectivo, tarjeta, transferencia, notas) VALUES (?, ?, ?, ?, ?, ?, ?, ?)').run(req.user.id, desde, total, ventas.length, efectivo, tarjeta, transferencia, notas || '');
+  const r = db.prepare('INSERT INTO cortes (usuario_id, fecha_inicio, total_ventas, num_ventas, efectivo, tarjeta, transferencia, notas, creado_en) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)').run(req.user.id, desde, total, ventas.length, efectivo, tarjeta, transferencia, notas || '', ahoraMexico());
   res.json({ id: r.lastInsertRowid, total_ventas: total, num_ventas: ventas.length, efectivo, tarjeta, transferencia });
 });
 
@@ -356,7 +374,10 @@ app.get('/api/cortes', authMiddleware, (req, res) => {
 
 // ===== DASHBOARD =====
 app.get('/api/dashboard', authMiddleware, (req, res) => {
-  const hoy = new Date().toISOString().split('T')[0];
+  const now = new Date();
+  const localNow = new Date(now.getTime() + (-6 * 60) * 60000);
+  const hoy = localNow.toISOString().split('T')[0];
+
   const ventas_hoy = db.prepare(`SELECT COUNT(*) as num, COALESCE(SUM(total),0) as total FROM ventas WHERE date(creado_en) = ?`).get(hoy);
   const productos_total = db.prepare('SELECT COUNT(*) as num FROM productos WHERE activo = 1').get();
   const bajo_stock = db.prepare('SELECT COUNT(*) as num FROM productos WHERE activo = 1 AND stock <= stock_minimo').get();
@@ -383,7 +404,11 @@ app.get('/api/dashboard', authMiddleware, (req, res) => {
 
 // ===== MONITOREO =====
 app.get('/api/cajeros/actividad', authMiddleware, solodueno, (req, res) => {
-  const dia = req.query.fecha || new Date().toISOString().split('T')[0];
+  const dia = req.query.fecha || (() => {
+    const now = new Date();
+    const local = new Date(now.getTime() + (-6 * 60) * 60000);
+    return local.toISOString().split('T')[0];
+  })();
   const actividad = db.prepare(`
     SELECT u.id, u.nombre, u.email, u.rol, u.activo,
       COUNT(v.id) as num_ventas,
@@ -424,7 +449,7 @@ app.get('/api/deudas', authMiddleware, (req, res) => {
 app.post('/api/deudas', authMiddleware, (req, res) => {
   const { nombre, monto, envases, notas } = req.body;
   if (!nombre) return res.status(400).json({ error: 'El nombre es requerido' });
-  const r = db.prepare('INSERT INTO deudas (nombre, monto, envases, notas, usuario_id) VALUES (?, ?, ?, ?, ?)').run(nombre, monto || 0, envases || 0, notas || '', req.user.id);
+  const r = db.prepare('INSERT INTO deudas (nombre, monto, envases, notas, usuario_id, creado_en) VALUES (?, ?, ?, ?, ?, ?)').run(nombre, monto || 0, envases || 0, notas || '', req.user.id, ahoraMexico());
   res.json({ id: r.lastInsertRowid, mensaje: 'Deuda registrada' });
 });
 
@@ -443,7 +468,7 @@ app.delete('/api/deudas/:id', authMiddleware, (req, res) => {
   res.json({ mensaje: 'Deuda eliminada' });
 });
 
-// ===== EXPORTAR =====
+// ===== EXPORTAR (fechas convertidas a hora México) =====
 app.get('/api/exportar/ventas', authMiddleware, solodueno, (req, res) => {
   const { desde, hasta } = req.query;
   let query = `SELECT v.folio, v.creado_en as fecha, u.nombre as cajero, v.metodo_pago, v.descuento, v.total, v.notas FROM ventas v LEFT JOIN usuarios u ON v.usuario_id = u.id WHERE 1=1`;
@@ -452,8 +477,8 @@ app.get('/api/exportar/ventas', authMiddleware, solodueno, (req, res) => {
   if (hasta) { query += ' AND v.creado_en <= ?'; params.push(hasta); }
   query += ' ORDER BY v.creado_en DESC';
   const ventas = db.prepare(query).all(...params);
-  let csv = 'Folio,Fecha,Cajero,Método de Pago,Descuento,Total,Notas\n';
-  ventas.forEach(v => { csv += `"${v.folio}","${v.fecha}","${v.cajero||''}","${v.metodo_pago}","${v.descuento}","${v.total}","${v.notas||''}"\n`; });
+  let csv = 'Folio,Fecha (México),Cajero,Método de Pago,Descuento,Total,Notas\n';
+  ventas.forEach(v => { csv += `"${v.folio}","${utcAMexico(v.fecha)}","${v.cajero||''}","${v.metodo_pago}","${v.descuento}","${v.total}","${v.notas||''}"\n`; });
   res.setHeader('Content-Type', 'text/csv; charset=utf-8');
   res.setHeader('Content-Disposition', `attachment; filename="ventas_${new Date().toISOString().split('T')[0]}.csv"`);
   res.send('\uFEFF' + csv);
@@ -468,8 +493,8 @@ app.get('/api/exportar/detalle-ventas', authMiddleware, solodueno, (req, res) =>
   if (hasta) { query += ' AND v.creado_en <= ?'; params.push(hasta); }
   query += ' ORDER BY v.creado_en DESC';
   const items = db.prepare(query).all(...params);
-  let csv = 'Folio,Fecha,Cajero,Código,Producto,Cantidad (inv),Cantidad (venta),Unidad Venta,Precio Unitario,Subtotal\n';
-  items.forEach(i => { csv += `"${i.folio}","${i.fecha}","${i.cajero||''}","${i.codigo||''}","${i.producto||''}","${i.cantidad}","${i.cantidad_venta||i.cantidad}","${i.unidad_venta||''}","${i.precio_unitario}","${i.subtotal}"\n`; });
+  let csv = 'Folio,Fecha (México),Cajero,Código,Producto,Cantidad (inv),Cantidad (venta),Unidad Venta,Precio Unitario,Subtotal\n';
+  items.forEach(i => { csv += `"${i.folio}","${utcAMexico(i.fecha)}","${i.cajero||''}","${i.codigo||''}","${i.producto||''}","${i.cantidad}","${i.cantidad_venta||i.cantidad}","${i.unidad_venta||''}","${i.precio_unitario}","${i.subtotal}"\n`; });
   res.setHeader('Content-Type', 'text/csv; charset=utf-8');
   res.setHeader('Content-Disposition', `attachment; filename="detalle_ventas_${new Date().toISOString().split('T')[0]}.csv"`);
   res.send('\uFEFF' + csv);
@@ -486,8 +511,8 @@ app.get('/api/exportar/inventario', authMiddleware, solodueno, (req, res) => {
 
 app.get('/api/exportar/cortes', authMiddleware, solodueno, (req, res) => {
   const cortes = db.prepare(`SELECT c.creado_en as fecha, u.nombre as cajero, c.num_ventas, c.efectivo, c.tarjeta, c.transferencia, c.total_ventas, c.notas FROM cortes c LEFT JOIN usuarios u ON c.usuario_id = u.id ORDER BY c.creado_en DESC`).all();
-  let csv = 'Fecha,Cajero,Num Ventas,Efectivo,Tarjeta,Transferencia,Total,Notas\n';
-  cortes.forEach(c => { csv += `"${c.fecha}","${c.cajero||''}","${c.num_ventas}","${c.efectivo}","${c.tarjeta}","${c.transferencia}","${c.total_ventas}","${c.notas||''}"\n`; });
+  let csv = 'Fecha (México),Cajero,Num Ventas,Efectivo,Tarjeta,Transferencia,Total,Notas\n';
+  cortes.forEach(c => { csv += `"${utcAMexico(c.fecha)}","${c.cajero||''}","${c.num_ventas}","${c.efectivo}","${c.tarjeta}","${c.transferencia}","${c.total_ventas}","${c.notas||''}"\n`; });
   res.setHeader('Content-Type', 'text/csv; charset=utf-8');
   res.setHeader('Content-Disposition', `attachment; filename="cortes_${new Date().toISOString().split('T')[0]}.csv"`);
   res.send('\uFEFF' + csv);
