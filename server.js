@@ -144,7 +144,7 @@ if (!corpExiste) {
   console.log('✅ Usuario corporativo creado: corp@tienda.com / corp2026');
 }
 
-// MIDDLEWARE
+// ===== MIDDLEWARE =====
 function authMiddleware(req, res, next) {
   const token = req.headers.authorization?.split(' ')[1];
   if (!token) return res.status(401).json({ error: 'Token requerido' });
@@ -153,12 +153,20 @@ function authMiddleware(req, res, next) {
 }
 
 function solodueno(req, res, next) {
-  if (req.user.rol !== 'dueno' && req.user.rol !== 'os') return res.status(403).json({ error: 'Sin permisos suficientes' });
+  if (req.user.rol !== 'dueno' && req.user.rol !== 'os')
+    return res.status(403).json({ error: 'Sin permisos suficientes' });
   next();
 }
 
 function soloOS(req, res, next) {
-  if (req.user.rol !== 'os') return res.status(403).json({ error: 'Solo el rol OS puede hacer esto' });
+  if (req.user.rol !== 'os')
+    return res.status(403).json({ error: 'Solo el rol OS puede hacer esto' });
+  next();
+}
+
+function soloCorporativoODueno(req, res, next) {
+  if (req.user.rol !== 'dueno' && req.user.rol !== 'os' && req.user.rol !== 'corporativo')
+    return res.status(403).json({ error: 'Sin permisos suficientes' });
   next();
 }
 
@@ -181,7 +189,6 @@ app.post('/api/usuarios', authMiddleware, soloCorporativoODueno, (req, res) => {
   const { nombre, email, password, rol } = req.body;
   const hash = bcrypt.hashSync(password, 10);
   try {
-    // Solo OS puede crear dueños
     const rolFinal = rol || 'admin';
     if (rolFinal === 'dueno' && req.user.rol !== 'os') return res.status(403).json({ error: 'Solo el rol OS puede crear dueños' });
     if (rolFinal === 'os' && req.user.rol !== 'os') return res.status(403).json({ error: 'No puedes crear rol OS' });
@@ -254,7 +261,7 @@ app.delete('/api/productos/:id', authMiddleware, solodueno, (req, res) => {
   res.json({ mensaje: 'Producto eliminado' });
 });
 
-// ===== VENTAS (con soporte granel) =====
+// ===== VENTAS =====
 app.post('/api/ventas', authMiddleware, (req, res) => {
   const { items, metodo_pago, descuento, notas } = req.body;
   if (!items?.length) return res.status(400).json({ error: 'Sin productos' });
@@ -262,23 +269,15 @@ app.post('/api/ventas', authMiddleware, (req, res) => {
   let total = 0;
 
   const insertVenta = db.transaction(() => {
-    // Validar stock
     for (const item of items) {
       const prod = db.prepare('SELECT * FROM productos WHERE id = ? AND activo = 1').get(item.producto_id);
       if (!prod) throw new Error(`Producto ${item.producto_id} no encontrado`);
-      // cantidad siempre en unidades de inventario
       if (prod.stock < item.cantidad) throw new Error(`Stock insuficiente: ${prod.nombre}`);
     }
 
-    // Calcular total
     for (const item of items) {
       const prod = db.prepare('SELECT * FROM productos WHERE id = ?').get(item.producto_id);
-      if (item.es_granel) {
-        // precio_venta está por unidad de inventario; cantidad es fracción de esa unidad
-        total += prod.precio_venta * item.cantidad;
-      } else {
-        total += prod.precio_venta * item.cantidad;
-      }
+      total += prod.precio_venta * item.cantidad;
     }
     total -= (descuento || 0);
 
@@ -286,14 +285,8 @@ app.post('/api/ventas', authMiddleware, (req, res) => {
 
     for (const item of items) {
       const prod = db.prepare('SELECT * FROM productos WHERE id = ?').get(item.producto_id);
-      const precio_unitario = item.es_granel
-        ? prod.precio_venta * item.cantidad  // subtotal granel
-        : prod.precio_venta;
-      const subtotal = item.es_granel
-        ? prod.precio_venta * item.cantidad
-        : prod.precio_venta * item.cantidad;
+      const subtotal = prod.precio_venta * item.cantidad;
 
-      // precio_unitario en venta_items: para granel guardamos precio por unidad de venta
       let precio_unit_display = prod.precio_venta;
       if (item.es_granel && item.cantidad_venta && item.cantidad_venta > 0) {
         precio_unit_display = (prod.precio_venta * item.cantidad) / item.cantidad_venta;
@@ -302,8 +295,8 @@ app.post('/api/ventas', authMiddleware, (req, res) => {
       db.prepare(`INSERT INTO venta_items (venta_id, producto_id, cantidad, cantidad_venta, unidad_venta, es_granel, precio_unitario, subtotal)
         VALUES (?, ?, ?, ?, ?, ?, ?, ?)`).run(
         venta.lastInsertRowid, item.producto_id,
-        item.cantidad,                          // en unidades de inventario
-        item.cantidad_venta || item.cantidad,   // en unidades de venta (para mostrar)
+        item.cantidad,
+        item.cantidad_venta || item.cantidad,
         item.unidad_venta || null,
         item.es_granel ? 1 : 0,
         precio_unit_display,
@@ -384,7 +377,6 @@ app.get('/api/dashboard', authMiddleware, (req, res) => {
   if (fuera.num > 0) alertas_actividad.push({ tipo: 'warning', mensaje: `${fuera.num} venta(s) fuera de horario normal` });
   const desc = db.prepare(`SELECT u.nombre, COUNT(v.id) as num_descuentos FROM ventas v LEFT JOIN usuarios u ON v.usuario_id = u.id WHERE date(v.creado_en) = ? AND v.descuento > 0 GROUP BY v.usuario_id HAVING num_descuentos >= 3`).all(hoy);
   desc.forEach(d => alertas_actividad.push({ tipo: 'danger', mensaje: `${d.nombre} aplicó descuentos en ${d.num_descuentos} ventas hoy` }));
-  // deudas pendientes para el dashboard
   const deudas_count = db.prepare('SELECT COUNT(*) as num FROM deudas').get();
   res.json({ ventas_hoy, productos_total, bajo_stock, ultimas_ventas, alertas, actividad_cajeros, alertas_actividad, deudas_pendientes: deudas_count.num });
 });
@@ -408,7 +400,6 @@ app.get('/api/cajeros/actividad', authMiddleware, solodueno, (req, res) => {
   `).all(dia);
   res.json({ fecha: dia, cajeros: actividad });
 });
-
 
 // ===== ENDPOINTS EXCLUSIVOS OS =====
 app.get('/api/os/usuarios', authMiddleware, soloOS, (req, res) => {
