@@ -61,6 +61,8 @@ tr:last-child td{border-bottom:none;}tr:hover td{background:#fafaf8;}
 .badge-warn{background:#fff3cd;color:#f4a261;}.badge-blue{background:#dce9ff;color:#2b5fad;}
 .badge-purple{background:#ede9fe;color:#6d28d9;}
 .badge-orange{background:#ffedd5;color:#c2410c;}
+.badge-corp{background:#1a2e1f;color:#c8d8cb;}
+.badge-os{background:#0f172a;color:#38bdf8;}
 .search-row{display:flex;gap:12px;margin-bottom:20px;align-items:center;flex-wrap:wrap;}
 .search-input{flex:1;padding:10px 14px;border:2px solid var(--border);border-radius:10px;font-family:'Nunito',sans-serif;font-size:14px;outline:none;min-width:150px;}
 .search-input:focus{border-color:var(--accent);}
@@ -162,7 +164,7 @@ tr:last-child td{border-bottom:none;}tr:hover td{background:#fafaf8;}
 
 <div id="loginScreen">
   <div class="login-box">
-    <div class="login-logo">Tienda<span>OS</span></div>
+    <div class="login-logo">Abarrotes <span>Iker</span></div>
     <div class="login-sub">Sistema de gestión de inventario</div>
     <div id="loginAlert"></div>
     <div class="form-group"><label>Correo electrónico</label><input type="email" id="loginEmail" placeholder="correo@tienda.com" value="dueno@tienda.com"></div>
@@ -174,7 +176,7 @@ tr:last-child td{border-bottom:none;}tr:hover td{background:#fafaf8;}
 <div id="app">
   <div class="layout">
     <nav class="sidebar" id="sidebar">
-      <div class="sidebar-logo">Tienda<span>OS</span></div>
+      <div class="sidebar-logo">Abarrotes <span>Iker</span></div>
       <div class="sidebar-section">Principal</div>
       <div class="nav-item active" onclick="showPage('dashboard',this)"><span class="icon">📊</span><span>Dashboard</span></div>
       <div class="nav-item" onclick="showPage('pos',this)"><span class="icon">🛒</span><span>Punto de Venta</span></div>
@@ -188,6 +190,8 @@ tr:last-child td{border-bottom:none;}tr:hover td{background:#fafaf8;}
       <div class="nav-item" id="navUsuarios" style="display:none" onclick="showPage('usuarios',this)"><span class="icon">👥</span><span>Usuarios</span></div>
       <div class="nav-item" id="navCajeros" style="display:none" onclick="showPage('cajeros',this)"><span class="icon">🔍</span><span>Monitoreo</span></div>
       <div class="nav-item" id="navExportar" style="display:none" onclick="showPage('exportar',this)"><span class="icon">📥</span><span>Exportar</span></div>
+      <div class="sidebar-section" id="sectionOS" style="display:none">Sistema OS</div>
+      <div class="nav-item" id="navOS" style="display:none" onclick="showPage('os',this)"><span class="icon">⚙️</span><span>Gestión OS</span></div>
       <div class="sidebar-user">
         <div class="name" id="sidebarName">—</div>
         <div class="role" id="sidebarRole">—</div>
@@ -360,6 +364,16 @@ tr:last-child td{border-bottom:none;}tr:hover td{background:#fafaf8;}
         </div>
         <div id="deudasLista"></div>
       </div>
+
+      <!-- OS -->
+      <div class="page" id="page-os">
+        <div class="page-title">Gestión OS</div>
+        <div class="page-sub">Control total del sistema — rol exclusivo</div>
+        <div style="margin-bottom:16px"><button class="btn btn-primary" onclick="openModal('modalOSUsuario')">+ Nuevo Usuario</button></div>
+        <div class="table-card">
+          <table><thead><tr><th>Nombre</th><th>Email</th><th>Rol</th><th>Estado</th><th>Acción</th></tr></thead><tbody id="osUsuariosTable"></tbody></table>
+        </div>
+      </div>
     </main>
   </div>
 </div>
@@ -433,10 +447,32 @@ tr:last-child td{border-bottom:none;}tr:hover td{background:#fafaf8;}
     <div class="form-group"><label>Nombre completo</label><input id="userNombre" placeholder="Nombre del empleado"></div>
     <div class="form-group"><label>Correo electrónico</label><input type="email" id="userEmail" placeholder="correo@tienda.com"></div>
     <div class="form-group"><label>Contraseña</label><input type="password" id="userPassword" placeholder="Mínimo 6 caracteres"></div>
-    <div class="form-group"><label>Rol</label><select id="userRol"><option value="admin">Administrador</option><option value="cajero">Cajero</option></select></div>
+    <div class="form-group"><label>Rol</label><select id="userRol"><option value="dueno">Dueño de Tienda</option><option value="admin">Administrador</option><option value="cajero">Cajero</option></select></div>
     <div class="modal-footer">
       <button class="btn btn-secondary" onclick="closeModal('modalUsuario')">Cancelar</button>
       <button class="btn btn-primary" onclick="guardarUsuario()">Crear Usuario</button>
+    </div>
+  </div>
+</div>
+
+
+<!-- Modal OS Usuario -->
+<div class="modal-overlay" id="modalOSUsuario">
+  <div class="modal" style="max-width:420px">
+    <h2>Nuevo Usuario</h2>
+    <div class="form-group"><label>Nombre completo</label><input id="osUserNombre" placeholder="Nombre"></div>
+    <div class="form-group"><label>Correo electrónico</label><input type="email" id="osUserEmail" placeholder="correo@tienda.com"></div>
+    <div class="form-group"><label>Contraseña</label><input type="password" id="osUserPassword" placeholder="Mínimo 6 caracteres"></div>
+    <div class="form-group"><label>Rol</label>
+      <select id="osUserRol">
+        <option value="dueno">Dueño de tienda</option>
+        <option value="admin">Administrador</option>
+        <option value="cajero">Cajero</option>
+      </select>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeModal('modalOSUsuario')">Cancelar</button>
+      <button class="btn btn-primary" onclick="guardarOSUsuario()">Crear</button>
     </div>
   </div>
 </div>
@@ -512,7 +548,8 @@ function initApp(){
   if(!token||!user)return;
   document.getElementById('loginScreen').style.display='none';document.getElementById('app').style.display='block';
   document.getElementById('sidebarName').textContent=user.nombre;document.getElementById('sidebarRole').textContent=user.rol.toUpperCase();
-  if(user.rol==='dueno'){['sectionAdmin','navUsuarios','navCajeros','navExportar','dashCajerosSection'].forEach(id=>{const el=document.getElementById(id);if(el)el.style.display=id==='sectionAdmin'?'block':'flex';});document.getElementById('dashCajerosSection').style.display='block';}
+  if(user.rol==='dueno'||user.rol==='os'){['sectionAdmin','navUsuarios','navCajeros','navExportar','dashCajerosSection'].forEach(id=>{const el=document.getElementById(id);if(el)el.style.display=id==='sectionAdmin'?'block':'flex';});document.getElementById('dashCajerosSection').style.display='block';}
+  if(user.rol==='os'){document.getElementById('navOS').style.display='flex';document.getElementById('sectionOS').style.display='block';}
   document.getElementById('dashFecha').textContent=new Date().toLocaleDateString('es-MX',{weekday:'long',year:'numeric',month:'long',day:'numeric'});
   document.getElementById('corteDesde').value=new Date().toISOString().split('T')[0]+'T00:00';
   loadDashboard();loadProductosPos();
@@ -532,6 +569,7 @@ function showPage(page,el){
   if(page==='cajeros'){setCajeroHoy();loadCajerosActividad();}
   if(page==='exportar')setExportHoy();
   if(page==='deudas')loadDeudas();
+  if(page==='os')loadOSUsuarios();
 }
 
 async function loadDashboard(){
@@ -752,7 +790,7 @@ async function hacerCorte(){
 
 async function loadCortes(){const cortes=await api('GET','/cortes');document.getElementById('cortesTable').innerHTML=cortes.map(c=>`<tr><td>${new Date(c.creado_en).toLocaleString('es-MX')}</td><td>${c.cajero||'—'}</td><td>${c.num_ventas}</td><td>$${c.efectivo.toFixed(2)}</td><td>$${c.tarjeta.toFixed(2)}</td><td style="font-weight:700">$${c.total_ventas.toFixed(2)}</td></tr>`).join('')||'<tr><td colspan="6" style="text-align:center;color:var(--muted)">Sin cortes</td></tr>';}
 
-async function loadUsuarios(){const users=await api('GET','/usuarios');document.getElementById('usuariosTable').innerHTML=users.map(u=>`<tr><td style="font-weight:600">${u.nombre}</td><td>${u.email}</td><td><span class="badge ${u.rol==='dueno'?'badge-warn':'badge-blue'}">${u.rol}</span></td><td><span class="badge ${u.activo?'badge-green':'badge-red'}">${u.activo?'Activo':'Inactivo'}</span></td><td>${u.rol!=='dueno'?`<button class="btn btn-sm ${u.activo?'btn-danger':'btn-primary'}" onclick="toggleUsuario(${u.id})">${u.activo?'Desactivar':'Activar'}</button>`:'—'}</td></tr>`).join('');}
+async function loadUsuarios(){const users=await api('GET','/usuarios');document.getElementById('usuariosTable').innerHTML=users.map(u=>`<tr><td style="font-weight:600">${u.nombre}</td><td>${u.email}</td><td><span class="badge ${u.rol==='corporativo'?'badge-corp':u.rol==='dueno'?'badge-warn':'badge-blue'}">${u.rol}</span></td><td><span class="badge ${u.activo?'badge-green':'badge-red'}">${u.activo?'Activo':'Inactivo'}</span></td><td>${u.rol!=='corporativo'?`<button class="btn btn-sm ${u.activo?'btn-danger':'btn-primary'}" onclick="toggleUsuario(${u.id})">${u.activo?'Desactivar':'Activar'}</button>`:'—'}</td></tr>`).join('');}
 async function guardarUsuario(){try{await api('POST','/usuarios',{nombre:document.getElementById('userNombre').value,email:document.getElementById('userEmail').value,password:document.getElementById('userPassword').value,rol:document.getElementById('userRol').value});closeModal('modalUsuario');loadUsuarios();}catch(e){alert(e.message);}}
 async function toggleUsuario(id){await api('PATCH','/usuarios/'+id+'/toggle');loadUsuarios();}
 function setCajeroHoy(){document.getElementById('cajeroFecha').value=new Date().toISOString().split('T')[0];}
@@ -778,6 +816,40 @@ function exportar(tipo){
 
 function descargarBackup(){fetch('/api/backup',{headers:{'Authorization':'Bearer '+token}}).then(r=>r.blob()).then(blob=>{const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=`tienda_backup_${new Date().toISOString().split('T')[0]}.db`;a.click();}).catch(e=>alert('Error: '+e.message));}
 
+
+
+// ===================== OS =====================
+async function loadOSUsuarios() {
+  try {
+    const users = await api('GET', '/os/usuarios');
+    document.getElementById('osUsuariosTable').innerHTML = users.map(u => `
+      <tr>
+        <td style="font-weight:600">${u.nombre}</td>
+        <td>${u.email}</td>
+        <td><span class="badge ${u.rol==='os'?'badge-os':u.rol==='dueno'?'badge-warn':'badge-blue'}">${u.rol.toUpperCase()}</span></td>
+        <td><span class="badge ${u.activo?'badge-green':'badge-red'}">${u.activo?'Activo':'Inactivo'}</span></td>
+        <td>${u.rol!=='os'?`<button class="btn btn-sm ${u.activo?'btn-danger':'btn-primary'}" onclick="toggleOSUsuario(${u.id})">${u.activo?'Desactivar':'Activar'}</button>`:'—'}</td>
+      </tr>`).join('');
+  } catch(e) { console.error(e); }
+}
+
+async function guardarOSUsuario() {
+  try {
+    await api('POST', '/os/usuarios', {
+      nombre: document.getElementById('osUserNombre').value,
+      email: document.getElementById('osUserEmail').value,
+      password: document.getElementById('osUserPassword').value,
+      rol: document.getElementById('osUserRol').value
+    });
+    closeModal('modalOSUsuario');
+    loadOSUsuarios();
+  } catch(e) { alert(e.message); }
+}
+
+async function toggleOSUsuario(id) {
+  await api('PATCH', '/usuarios/' + id + '/toggle');
+  loadOSUsuarios();
+}
 
 // ===================== DEUDAS =====================
 async function loadDeudas() {
