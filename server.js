@@ -377,7 +377,7 @@ app.get('/api/cortes', authMiddleware, (req, res) => {
 
 // ===== DASHBOARD =====
 app.get('/api/dashboard', authMiddleware, (req, res) => {
-  const now = new Date(); const hoy = new Date(now.getTime() - now.getTimezoneOffset() * 60000).toISOString().split('T')[0];
+  const now = new Date(); const hoy = new Date(now.getTime() - 6*60*60*1000).toISOString().split('T')[0];
   const ventas_hoy = db.prepare(`SELECT COUNT(*) as num, COALESCE(SUM(total),0) as total FROM ventas WHERE date(creado_en, 'localtime') = ?`).get(hoy);
   const productos_total = db.prepare('SELECT COUNT(*) as num FROM productos WHERE activo = 1').get();
   const bajo_stock = db.prepare('SELECT COUNT(*) as num FROM productos WHERE activo = 1 AND stock <= stock_minimo').get();
