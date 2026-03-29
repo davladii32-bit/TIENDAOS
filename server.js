@@ -121,6 +121,14 @@ try { db.exec(`ALTER TABLE venta_items ADD COLUMN cantidad_venta REAL`); } catch
 try { db.exec(`ALTER TABLE venta_items ADD COLUMN unidad_venta TEXT`); } catch(e) {}
 try { db.exec(`ALTER TABLE venta_items ADD COLUMN es_granel INTEGER DEFAULT 0`); } catch(e) {}
 
+
+const corpExiste = db.prepare('SELECT id FROM usuarios WHERE rol = ?').get('corporativo');
+if (!corpExiste) {
+  const hashCorp = bcrypt.hashSync('corp2026', 10);
+  db.prepare('INSERT INTO usuarios (nombre, email, password, rol) VALUES (?, ?, ?, ?)').run('Corporativo', 'corp@tienda.com', hashCorp, 'corporativo');
+  console.log('✅ Usuario corporativo creado: corp@tienda.com / corp2026');
+}
+
 // Crear dueño por defecto
 const duenoExiste = db.prepare('SELECT id FROM usuarios WHERE rol = ?').get('dueno');
 if (!duenoExiste) {
@@ -137,12 +145,7 @@ if (!osExiste) {
   console.log('✅ Usuario OS creado: os@iker.com / OS-iker-2026');
 }
 
-const corpExiste = db.prepare('SELECT id FROM usuarios WHERE rol = ?').get('corporativo');
-if (!corpExiste) {
-  const hash = bcrypt.hashSync('corp2026', 10);
-  db.prepare('INSERT INTO usuarios (nombre, email, password, rol) VALUES (?, ?, ?, ?)').run('Corporativo', 'corp@tienda.com', hash, 'corporativo');
-  console.log('✅ Usuario corporativo creado: corp@tienda.com / corp2026');
-}
+
 
 // MIDDLEWARE
 function authMiddleware(req, res, next) {
@@ -150,6 +153,17 @@ function authMiddleware(req, res, next) {
   if (!token) return res.status(401).json({ error: 'Token requerido' });
   try { req.user = jwt.verify(token, JWT_SECRET); next(); }
   catch { res.status(401).json({ error: 'Token inválido' }); }
+}
+
+
+function soloCorporativo(req, res, next) {
+  if (req.user.rol !== 'corporativo') return res.status(403).json({ error: 'Solo el corporativo puede hacer esto' });
+  next();
+}
+
+function corporativoODueno(req, res, next) {
+  if (req.user.rol !== 'corporativo' && req.user.rol !== 'dueno') return res.status(403).json({ error: 'Sin permisos' });
+  next();
 }
 
 function solodueno(req, res, next) {
@@ -422,6 +436,30 @@ app.post('/api/os/usuarios', authMiddleware, soloOS, (req, res) => {
     const r = db.prepare('INSERT INTO usuarios (nombre, email, password, rol) VALUES (?, ?, ?, ?)').run(nombre, email, hash, rol || 'dueno');
     res.json({ id: r.lastInsertRowid, mensaje: 'Usuario creado' });
   } catch { res.status(400).json({ error: 'Email ya existe' }); }
+});
+
+
+// ===== ENDPOINTS CORPORATIVO =====
+app.get('/api/corporativo/usuarios', authMiddleware, soloCorporativo, (req, res) => {
+  res.json(db.prepare('SELECT id, nombre, email, rol, activo, creado_en FROM usuarios ORDER BY rol, nombre').all());
+});
+
+app.post('/api/corporativo/usuarios', authMiddleware, soloCorporativo, (req, res) => {
+  const { nombre, email, password, rol } = req.body;
+  if (!['dueno', 'admin', 'cajero'].includes(rol)) return res.status(400).json({ error: 'Rol inválido' });
+  const hash = bcrypt.hashSync(password, 10);
+  try {
+    const r = db.prepare('INSERT INTO usuarios (nombre, email, password, rol) VALUES (?, ?, ?, ?)').run(nombre, email, hash, rol);
+    res.json({ id: r.lastInsertRowid, mensaje: 'Usuario creado' });
+  } catch { res.status(400).json({ error: 'Email ya existe' }); }
+});
+
+app.patch('/api/corporativo/usuarios/:id/toggle', authMiddleware, soloCorporativo, (req, res) => {
+  const user = db.prepare('SELECT * FROM usuarios WHERE id = ?').get(req.params.id);
+  if (!user) return res.status(404).json({ error: 'Usuario no encontrado' });
+  if (user.rol === 'corporativo') return res.status(400).json({ error: 'No puedes desactivarte a ti mismo' });
+  db.prepare('UPDATE usuarios SET activo = ? WHERE id = ?').run(user.activo ? 0 : 1, req.params.id);
+  res.json({ mensaje: `Usuario ${user.activo ? 'desactivado' : 'activado'}` });
 });
 
 // ===== DEUDAS =====
