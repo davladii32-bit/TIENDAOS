@@ -60,6 +60,7 @@ tr:last-child td{border-bottom:none;}tr:hover td{background:#fafaf8;}
 .badge-green{background:#d8f3dc;color:#2d6a4f;}.badge-red{background:#ffe0dc;color:#e63946;}
 .badge-warn{background:#fff3cd;color:#f4a261;}.badge-blue{background:#dce9ff;color:#2b5fad;}
 .badge-purple{background:#ede9fe;color:#6d28d9;}
+.badge-orange{background:#ffedd5;color:#c2410c;}
 .search-row{display:flex;gap:12px;margin-bottom:20px;align-items:center;flex-wrap:wrap;}
 .search-input{flex:1;padding:10px 14px;border:2px solid var(--border);border-radius:10px;font-family:'Nunito',sans-serif;font-size:14px;outline:none;min-width:150px;}
 .search-input:focus{border-color:var(--accent);}
@@ -181,6 +182,8 @@ tr:last-child td{border-bottom:none;}tr:hover td{background:#fafaf8;}
       <div class="nav-item" onclick="showPage('inventario',this)"><span class="icon">📦</span><span>Inventario</span></div>
       <div class="nav-item" onclick="showPage('ventas',this)"><span class="icon">💰</span><span>Ventas</span></div>
       <div class="nav-item" onclick="showPage('corte',this)"><span class="icon">🧾</span><span>Corte de Caja</span></div>
+      <div class="sidebar-section">Tienda</div>
+      <div class="nav-item" onclick="showPage('deudas',this)"><span class="icon">📋</span><span>Deudas</span></div>
       <div class="sidebar-section" id="sectionAdmin" style="display:none">Admin</div>
       <div class="nav-item" id="navUsuarios" style="display:none" onclick="showPage('usuarios',this)"><span class="icon">👥</span><span>Usuarios</span></div>
       <div class="nav-item" id="navCajeros" style="display:none" onclick="showPage('cajeros',this)"><span class="icon">🔍</span><span>Monitoreo</span></div>
@@ -346,6 +349,17 @@ tr:last-child td{border-bottom:none;}tr:hover td{background:#fafaf8;}
           <button class="btn btn-danger" onclick="descargarBackup()">⬇️ Descargar Backup Completo</button>
         </div>
       </div>
+
+      <!-- DEUDAS -->
+      <div class="page" id="page-deudas">
+        <div class="page-title">Deudas y Fiados</div>
+        <div class="page-sub">Registro de personas que deben dinero o envases</div>
+        <div style="display:flex;gap:12px;margin-bottom:20px;flex-wrap:wrap;align-items:center">
+          <div id="deudasResumen" style="display:flex;gap:12px;flex:1;flex-wrap:wrap"></div>
+          <button class="btn btn-primary" onclick="openModal('modalDeuda')">+ Nueva Deuda</button>
+        </div>
+        <div id="deudasLista"></div>
+      </div>
     </main>
   </div>
 </div>
@@ -450,6 +464,25 @@ tr:last-child td{border-bottom:none;}tr:hover td{background:#fafaf8;}
   </div>
 </div>
 
+
+<!-- Modal Deuda -->
+<div class="modal-overlay" id="modalDeuda">
+  <div class="modal" style="max-width:420px">
+    <h2 id="modalDeudaTitle">Nueva Deuda</h2>
+    <input type="hidden" id="deudaId">
+    <div class="form-group"><label>Nombre de la persona *</label><input id="deudaNombre" placeholder="Ej: Juan García"></div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+      <div class="form-group"><label>Monto en dinero ($)</label><input type="number" id="deudaMonto" placeholder="0.00" step="0.01" min="0"></div>
+      <div class="form-group"><label>Envases retornables</label><input type="number" id="deudaEnvases" placeholder="0" min="0"></div>
+    </div>
+    <div class="form-group"><label>Notas</label><textarea id="deudaNotas" rows="3" style="width:100%;padding:12px;border:2px solid var(--border);border-radius:10px;font-family:'Nunito',sans-serif;resize:vertical" placeholder="Descripción, producto, fecha acordada..."></textarea></div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeModal('modalDeuda');limpiarFormDeuda()">Cancelar</button>
+      <button class="btn btn-primary" onclick="guardarDeuda()">Guardar</button>
+    </div>
+  </div>
+</div>
+
 <script>
 const API='';
 let token=localStorage.getItem('token'),user=null,carrito=[],metodoPago='efectivo',camActiva=false,productosCache=[],granelProdActual=null;
@@ -498,6 +531,7 @@ function showPage(page,el){
   if(page==='corte')loadCortes();if(page==='usuarios')loadUsuarios();
   if(page==='cajeros'){setCajeroHoy();loadCajerosActividad();}
   if(page==='exportar')setExportHoy();
+  if(page==='deudas')loadDeudas();
 }
 
 async function loadDashboard(){
@@ -743,6 +777,98 @@ function exportar(tipo){
 }
 
 function descargarBackup(){fetch('/api/backup',{headers:{'Authorization':'Bearer '+token}}).then(r=>r.blob()).then(blob=>{const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=`tienda_backup_${new Date().toISOString().split('T')[0]}.db`;a.click();}).catch(e=>alert('Error: '+e.message));}
+
+
+// ===================== DEUDAS =====================
+async function loadDeudas() {
+  try {
+    const deudas = await api('GET', '/deudas');
+    const totalDinero = deudas.reduce((s, d) => s + (d.monto || 0), 0);
+    const totalEnvases = deudas.reduce((s, d) => s + (d.envases || 0), 0);
+    document.getElementById('deudasResumen').innerHTML = `
+      <div class="stat-card" style="--accent-color:#c2410c;min-width:140px;padding:14px 18px">
+        <div class="stat-label">Deudas activas</div>
+        <div class="stat-value" style="font-size:22px">${deudas.length}</div>
+      </div>
+      <div class="stat-card" style="--accent-color:#b45309;min-width:140px;padding:14px 18px">
+        <div class="stat-label">Total dinero</div>
+        <div class="stat-value" style="font-size:22px">$${totalDinero.toFixed(2)}</div>
+      </div>
+      ${totalEnvases > 0 ? `<div class="stat-card" style="--accent-color:#0369a1;min-width:140px;padding:14px 18px"><div class="stat-label">Envases</div><div class="stat-value" style="font-size:22px">${totalEnvases}</div></div>` : ''}
+    `;
+    if (!deudas.length) {
+      document.getElementById('deudasLista').innerHTML = '<div style="text-align:center;color:var(--muted);padding:40px;font-size:14px">✅ Sin deudas registradas</div>';
+      return;
+    }
+    document.getElementById('deudasLista').innerHTML = deudas.map(d => `
+      <div style="background:white;border-radius:14px;border:1px solid var(--border);padding:18px 20px;margin-bottom:12px;display:flex;align-items:flex-start;gap:16px">
+        <div style="width:42px;height:42px;border-radius:50%;background:#ffedd5;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0">👤</div>
+        <div style="flex:1">
+          <div style="font-weight:700;font-size:15px;margin-bottom:4px">${d.nombre}</div>
+          <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:4px">
+            ${d.monto > 0 ? `<span class="badge badge-orange">💵 $${d.monto.toFixed(2)}</span>` : ''}
+            ${d.envases > 0 ? `<span class="badge badge-blue">🧴 ${d.envases} envase${d.envases !== 1 ? 's' : ''}</span>` : ''}
+          </div>
+          ${d.notas ? `<div style="font-size:12px;color:var(--muted);margin-top:4px">${d.notas}</div>` : ''}
+          <div style="font-size:11px;color:var(--muted);margin-top:4px;font-family:'JetBrains Mono',monospace">${new Date(d.creado_en).toLocaleString('es-MX')} · ${d.registrado_por || '—'}</div>
+        </div>
+        <div style="display:flex;gap:8px;flex-shrink:0">
+          <button class="btn btn-secondary btn-sm" onclick="editarDeuda(${d.id})">✏️</button>
+          <button class="btn btn-danger btn-sm" onclick="eliminarDeuda(${d.id},'${d.nombre.replace(/'/g,"\'")}')">✅ Liquidar</button>
+        </div>
+      </div>
+    `).join('');
+  } catch(e) { console.error(e); }
+}
+
+function limpiarFormDeuda() {
+  document.getElementById('deudaId').value = '';
+  document.getElementById('deudaNombre').value = '';
+  document.getElementById('deudaMonto').value = '';
+  document.getElementById('deudaEnvases').value = '';
+  document.getElementById('deudaNotas').value = '';
+  document.getElementById('modalDeudaTitle').textContent = 'Nueva Deuda';
+}
+
+async function guardarDeuda() {
+  const id = document.getElementById('deudaId').value;
+  const nombre = document.getElementById('deudaNombre').value.trim();
+  if (!nombre) return alert('El nombre es requerido');
+  const data = {
+    nombre,
+    monto: parseFloat(document.getElementById('deudaMonto').value) || 0,
+    envases: parseInt(document.getElementById('deudaEnvases').value) || 0,
+    notas: document.getElementById('deudaNotas').value.trim()
+  };
+  try {
+    if (id) await api('PUT', '/deudas/' + id, data);
+    else await api('POST', '/deudas', data);
+    closeModal('modalDeuda');
+    limpiarFormDeuda();
+    loadDeudas();
+  } catch(e) { alert(e.message); }
+}
+
+function editarDeuda(id) {
+  const cards = document.getElementById('deudasLista').querySelectorAll('[data-id]');
+  api('GET', '/deudas').then(deudas => {
+    const d = deudas.find(x => x.id === id);
+    if (!d) return;
+    document.getElementById('deudaId').value = d.id;
+    document.getElementById('deudaNombre').value = d.nombre;
+    document.getElementById('deudaMonto').value = d.monto || '';
+    document.getElementById('deudaEnvases').value = d.envases || '';
+    document.getElementById('deudaNotas').value = d.notas || '';
+    document.getElementById('modalDeudaTitle').textContent = 'Editar Deuda';
+    openModal('modalDeuda');
+  });
+}
+
+async function eliminarDeuda(id, nombre) {
+  if (!confirm(`¿Marcar como liquidada la deuda de ${nombre}?`)) return;
+  try { await api('DELETE', '/deudas/' + id); loadDeudas(); }
+  catch(e) { alert(e.message); }
+}
 
 if(token&&user)initApp();else document.getElementById('loginScreen').style.display='flex';
 document.addEventListener('keydown',e=>{if(e.key==='Escape')document.querySelectorAll('.modal-overlay.open').forEach(m=>m.classList.remove('open'));});
