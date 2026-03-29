@@ -186,6 +186,8 @@ tr:last-child td{border-bottom:none;}tr:hover td{background:#fafaf8;}
       <div class="nav-item" onclick="showPage('corte',this)"><span class="icon">🧾</span><span>Corte de Caja</span></div>
       <div class="sidebar-section">Tienda</div>
       <div class="nav-item" onclick="showPage('deudas',this)"><span class="icon">📋</span><span>Deudas</span></div>
+      <div class="sidebar-section" id="sectionCorp" style="display:none">Corporativo</div>
+      <div class="nav-item" id="navCorp" style="display:none" onclick="showPage('corporativo',this)"><span class="icon">🏢</span><span>Gestión Usuarios</span></div>
       <div class="sidebar-section" id="sectionAdmin" style="display:none">Admin</div>
       <div class="nav-item" id="navUsuarios" style="display:none" onclick="showPage('usuarios',this)"><span class="icon">👥</span><span>Usuarios</span></div>
       <div class="nav-item" id="navCajeros" style="display:none" onclick="showPage('cajeros',this)"><span class="icon">🔍</span><span>Monitoreo</span></div>
@@ -354,6 +356,20 @@ tr:last-child td{border-bottom:none;}tr:hover td{background:#fafaf8;}
         </div>
       </div>
 
+
+      <!-- CORPORATIVO -->
+      <div class="page" id="page-corporativo">
+        <div class="page-title">🏢 Gestión de Usuarios</div>
+        <div class="page-sub">Crear y administrar dueños y administradores</div>
+        <div style="margin-bottom:16px">
+          <button class="btn btn-primary" onclick="openModal('modalCorpUsuario')">+ Nuevo Usuario</button>
+        </div>
+        <div class="table-card">
+          <table><thead><tr><th>Nombre</th><th>Email</th><th>Rol</th><th>Estado</th><th>Acción</th></tr></thead>
+          <tbody id="corpUsuariosTable"></tbody></table>
+        </div>
+      </div>
+
       <!-- DEUDAS -->
       <div class="page" id="page-deudas">
         <div class="page-title">Deudas y Fiados</div>
@@ -477,6 +493,28 @@ tr:last-child td{border-bottom:none;}tr:hover td{background:#fafaf8;}
   </div>
 </div>
 
+
+<!-- Modal Corporativo Usuario -->
+<div class="modal-overlay" id="modalCorpUsuario">
+  <div class="modal" style="max-width:420px">
+    <h2>Nuevo Usuario</h2>
+    <div class="form-group"><label>Nombre completo</label><input id="corpUserNombre" placeholder="Nombre"></div>
+    <div class="form-group"><label>Correo electrónico</label><input type="email" id="corpUserEmail" placeholder="correo@tienda.com"></div>
+    <div class="form-group"><label>Contraseña</label><input type="password" id="corpUserPassword" placeholder="Mínimo 6 caracteres"></div>
+    <div class="form-group"><label>Rol</label>
+      <select id="corpUserRol">
+        <option value="dueno">Dueño de tienda</option>
+        <option value="admin">Administrador</option>
+        <option value="cajero">Cajero</option>
+      </select>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeModal('modalCorpUsuario')">Cancelar</button>
+      <button class="btn btn-primary" onclick="guardarCorpUsuario()">Crear</button>
+    </div>
+  </div>
+</div>
+
 <!-- Modal Granel -->
 <div class="modal-overlay" id="modalGranel">
   <div class="modal" style="max-width:380px">
@@ -569,6 +607,7 @@ function showPage(page,el){
   if(page==='cajeros'){setCajeroHoy();loadCajerosActividad();}
   if(page==='exportar')setExportHoy();
   if(page==='deudas')loadDeudas();
+  if(page==='corporativo')loadCorpUsuarios();
   if(page==='os')loadOSUsuarios();
 }
 
@@ -849,6 +888,41 @@ async function guardarOSUsuario() {
 async function toggleOSUsuario(id) {
   await api('PATCH', '/usuarios/' + id + '/toggle');
   loadOSUsuarios();
+}
+
+
+// ===== CORPORATIVO =====
+async function loadCorpUsuarios() {
+  try {
+    const users = await api('GET', '/corporativo/usuarios');
+    document.getElementById('corpUsuariosTable').innerHTML = users.map(u =>
+      `<tr>
+        <td style="font-weight:600">${u.nombre}</td>
+        <td>${u.email}</td>
+        <td><span class="badge ${u.rol==='dueno'?'badge-warn':u.rol==='corporativo'?'badge-purple':'badge-blue'}">${u.rol}</span></td>
+        <td><span class="badge ${u.activo?'badge-green':'badge-red'}">${u.activo?'Activo':'Inactivo'}</span></td>
+        <td>${u.rol!=='corporativo'?`<button class="btn btn-sm ${u.activo?'btn-danger':'btn-primary'}" onclick="toggleCorpUsuario(${u.id})">${u.activo?'Desactivar':'Activar'}</button>`:'—'}</td>
+      </tr>`
+    ).join('');
+  } catch(e) { console.error(e); }
+}
+
+async function guardarCorpUsuario() {
+  try {
+    await api('POST', '/corporativo/usuarios', {
+      nombre: document.getElementById('corpUserNombre').value,
+      email: document.getElementById('corpUserEmail').value,
+      password: document.getElementById('corpUserPassword').value,
+      rol: document.getElementById('corpUserRol').value
+    });
+    closeModal('modalCorpUsuario');
+    loadCorpUsuarios();
+  } catch(e) { alert(e.message); }
+}
+
+async function toggleCorpUsuario(id) {
+  await api('PATCH', '/corporativo/usuarios/' + id + '/toggle');
+  loadCorpUsuarios();
 }
 
 // ===================== DEUDAS =====================
