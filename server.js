@@ -375,12 +375,12 @@ app.get('/api/dashboard', authMiddleware, (req, res) => {
       COALESCE(SUM(v.total), 0) as total_vendido,
       MAX(v.creado_en) as ultima_venta
     FROM usuarios u
-    LEFT JOIN ventas v ON v.usuario_id = u.id AND date(v.creado_en) = ?
+    LEFT JOIN ventas v ON v.usuario_id = u.id AND date(v.creado_en, 'localtime') = ?
     WHERE u.rol != 'dueno'
     GROUP BY u.id ORDER BY total_vendido DESC
   `).all(hoy);
   const alertas_actividad = [];
-  const fuera = db.prepare(`SELECT COUNT(*) as num FROM ventas WHERE date(creado_en) = ? AND (CAST(strftime('%H', creado_en) AS INTEGER) < 7 OR CAST(strftime('%H', creado_en) AS INTEGER) >= 22)`).get(hoy);
+  const fuera = db.prepare(`SELECT COUNT(*) as num FROM ventas WHERE date(creado_en, 'localtime') = ? AND (CAST(strftime('%H', creado_en, 'localtime') AS INTEGER) < 7 OR CAST(strftime('%H', creado_en, 'localtime') AS INTEGER) >= 22)`).get(hoy);
   if (fuera.num > 0) alertas_actividad.push({ tipo: 'warning', mensaje: `${fuera.num} venta(s) fuera de horario normal` });
   const desc = db.prepare(`SELECT u.nombre, COUNT(v.id) as num_descuentos FROM ventas v LEFT JOIN usuarios u ON v.usuario_id = u.id WHERE date(v.creado_en, 'localtime') = ? AND v.descuento > 0 GROUP BY v.usuario_id HAVING num_descuentos >= 3`).all(hoy);
   desc.forEach(d => alertas_actividad.push({ tipo: 'danger', mensaje: `${d.nombre} aplicó descuentos en ${d.num_descuentos} ventas hoy` }));
