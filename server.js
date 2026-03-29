@@ -17,23 +17,6 @@ app.use(express.static(path.join(__dirname, 'public')));
 const DB_PATH = process.env.DATABASE_PATH || './tienda.db';
 const db = new sqlite3(DB_PATH);
 
-// ===== UTILIDAD TIMEZONE MÉXICO (UTC-6) =====
-function ahoraMexico() {
-  const now = new Date();
-  const offset = -6 * 60;
-  const local = new Date(now.getTime() + offset * 60000);
-  return local.toISOString().replace('T', ' ').substring(0, 19);
-}
-
-function utcAMexico(fechaStr) {
-  if (!fechaStr) return '—';
-  const d = new Date(fechaStr);
-  if (isNaN(d)) return fechaStr;
-  const offset = -6 * 60;
-  const local = new Date(d.getTime() + offset * 60000);
-  return local.toISOString().replace('T', ' ').substring(0, 19);
-}
-
 db.exec(`
   CREATE TABLE IF NOT EXISTS usuarios (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -130,7 +113,7 @@ db.exec(`
   );
 `);
 
-// Migrar columnas granel si no existen
+// Migrar columnas granel si no existen (para bases de datos ya creadas)
 try { db.exec(`ALTER TABLE productos ADD COLUMN tipo_venta TEXT DEFAULT 'pieza'`); } catch(e) {}
 try { db.exec(`ALTER TABLE productos ADD COLUMN unidad_inventario TEXT`); } catch(e) {}
 try { db.exec(`ALTER TABLE productos ADD COLUMN unidad_venta TEXT`); } catch(e) {}
@@ -138,7 +121,7 @@ try { db.exec(`ALTER TABLE venta_items ADD COLUMN cantidad_venta REAL`); } catch
 try { db.exec(`ALTER TABLE venta_items ADD COLUMN unidad_venta TEXT`); } catch(e) {}
 try { db.exec(`ALTER TABLE venta_items ADD COLUMN es_granel INTEGER DEFAULT 0`); } catch(e) {}
 
-// Crear usuarios por defecto
+// Crear dueño por defecto
 const duenoExiste = db.prepare('SELECT id FROM usuarios WHERE rol = ?').get('dueno');
 if (!duenoExiste) {
   const hash = bcrypt.hashSync('dueno123', 10);
@@ -146,6 +129,7 @@ if (!duenoExiste) {
   console.log('✅ Usuario dueño creado: dueno@tienda.com / dueno123');
 }
 
+// Crear usuario OS por defecto si no existe
 const osExiste = db.prepare("SELECT id FROM usuarios WHERE rol = 'os'").get();
 if (!osExiste) {
   const hashOS = bcrypt.hashSync('OS-iker-2026', 10);
@@ -160,7 +144,7 @@ if (!corpExiste) {
   console.log('✅ Usuario corporativo creado: corp@tienda.com / corp2026');
 }
 
-// ===== MIDDLEWARE =====
+// MIDDLEWARE
 function authMiddleware(req, res, next) {
   const token = req.headers.authorization?.split(' ')[1];
   if (!token) return res.status(401).json({ error: 'Token requerido' });
@@ -169,20 +153,12 @@ function authMiddleware(req, res, next) {
 }
 
 function solodueno(req, res, next) {
-  if (req.user.rol !== 'dueno' && req.user.rol !== 'os')
-    return res.status(403).json({ error: 'Sin permisos suficientes' });
+  if (req.user.rol !== 'dueno' && req.user.rol !== 'os') return res.status(403).json({ error: 'Sin permisos suficientes' });
   next();
 }
 
 function soloOS(req, res, next) {
-  if (req.user.rol !== 'os')
-    return res.status(403).json({ error: 'Solo el rol OS puede hacer esto' });
-  next();
-}
-
-function soloCorporativoODueno(req, res, next) {
-  if (req.user.rol !== 'dueno' && req.user.rol !== 'os' && req.user.rol !== 'corporativo')
-    return res.status(403).json({ error: 'Sin permisos suficientes' });
+  if (req.user.rol !== 'os') return res.status(403).json({ error: 'Solo el rol OS puede hacer esto' });
   next();
 }
 
@@ -205,6 +181,7 @@ app.post('/api/usuarios', authMiddleware, soloCorporativoODueno, (req, res) => {
   const { nombre, email, password, rol } = req.body;
   const hash = bcrypt.hashSync(password, 10);
   try {
+    // Solo OS puede crear dueños
     const rolFinal = rol || 'admin';
     if (rolFinal === 'dueno' && req.user.rol !== 'os') return res.status(403).json({ error: 'Solo el rol OS puede crear dueños' });
     if (rolFinal === 'os' && req.user.rol !== 'os') return res.status(403).json({ error: 'No puedes crear rol OS' });
@@ -243,12 +220,11 @@ app.get('/api/productos/codigo/:codigo', authMiddleware, (req, res) => {
 app.post('/api/productos', authMiddleware, (req, res) => {
   const { codigo, nombre, categoria, precio_compra, precio_venta, stock, stock_minimo, unidad, tipo_venta, unidad_inventario, unidad_venta } = req.body;
   try {
-    const r = db.prepare(`INSERT INTO productos (codigo, nombre, categoria, precio_compra, precio_venta, stock, stock_minimo, unidad, tipo_venta, unidad_inventario, unidad_venta, creado_en, actualizado_en)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`).run(
+    const r = db.prepare(`INSERT INTO productos (codigo, nombre, categoria, precio_compra, precio_venta, stock, stock_minimo, unidad, tipo_venta, unidad_inventario, unidad_venta)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`).run(
       codigo, nombre, categoria || 'General', precio_compra || 0, precio_venta,
       stock || 0, stock_minimo || 5, unidad || 'pza',
-      tipo_venta || 'pieza', unidad_inventario || null, unidad_venta || null,
-      ahoraMexico(), ahoraMexico()
+      tipo_venta || 'pieza', unidad_inventario || null, unidad_venta || null
     );
     res.json({ id: r.lastInsertRowid, mensaje: 'Producto creado' });
   } catch { res.status(400).json({ error: 'Código ya existe' }); }
@@ -257,8 +233,8 @@ app.post('/api/productos', authMiddleware, (req, res) => {
 app.put('/api/productos/:id', authMiddleware, (req, res) => {
   const { nombre, categoria, precio_compra, precio_venta, stock_minimo, unidad, tipo_venta, unidad_inventario, unidad_venta } = req.body;
   db.prepare(`UPDATE productos SET nombre=?, categoria=?, precio_compra=?, precio_venta=?, stock_minimo=?, unidad=?,
-    tipo_venta=?, unidad_inventario=?, unidad_venta=?, actualizado_en=? WHERE id=?`
-  ).run(nombre, categoria, precio_compra, precio_venta, stock_minimo, unidad, tipo_venta || 'pieza', unidad_inventario || null, unidad_venta || null, ahoraMexico(), req.params.id);
+    tipo_venta=?, unidad_inventario=?, unidad_venta=?, actualizado_en=CURRENT_TIMESTAMP WHERE id=?`
+  ).run(nombre, categoria, precio_compra, precio_venta, stock_minimo, unidad, tipo_venta || 'pieza', unidad_inventario || null, unidad_venta || null, req.params.id);
   res.json({ mensaje: 'Producto actualizado' });
 });
 
@@ -268,8 +244,8 @@ app.patch('/api/productos/:id/stock', authMiddleware, (req, res) => {
   if (!prod) return res.status(404).json({ error: 'Producto no encontrado' });
   const nuevo_stock = tipo === 'entrada' ? prod.stock + cantidad : prod.stock - cantidad;
   if (nuevo_stock < 0) return res.status(400).json({ error: 'Stock insuficiente' });
-  db.prepare('UPDATE productos SET stock = ?, actualizado_en = ? WHERE id = ?').run(nuevo_stock, ahoraMexico(), req.params.id);
-  db.prepare('INSERT INTO movimientos (producto_id, tipo, cantidad, stock_anterior, stock_nuevo, nota, usuario_id, creado_en) VALUES (?, ?, ?, ?, ?, ?, ?, ?)').run(req.params.id, tipo, cantidad, prod.stock, nuevo_stock, nota || '', req.user.id, ahoraMexico());
+  db.prepare('UPDATE productos SET stock = ?, actualizado_en = CURRENT_TIMESTAMP WHERE id = ?').run(nuevo_stock, req.params.id);
+  db.prepare('INSERT INTO movimientos (producto_id, tipo, cantidad, stock_anterior, stock_nuevo, nota, usuario_id) VALUES (?, ?, ?, ?, ?, ?, ?)').run(req.params.id, tipo, cantidad, prod.stock, nuevo_stock, nota || '', req.user.id);
   res.json({ mensaje: 'Stock actualizado', stock_nuevo: nuevo_stock });
 });
 
@@ -278,7 +254,7 @@ app.delete('/api/productos/:id', authMiddleware, solodueno, (req, res) => {
   res.json({ mensaje: 'Producto eliminado' });
 });
 
-// ===== VENTAS =====
+// ===== VENTAS (con soporte granel) =====
 app.post('/api/ventas', authMiddleware, (req, res) => {
   const { items, metodo_pago, descuento, notas } = req.body;
   if (!items?.length) return res.status(400).json({ error: 'Sin productos' });
@@ -286,25 +262,38 @@ app.post('/api/ventas', authMiddleware, (req, res) => {
   let total = 0;
 
   const insertVenta = db.transaction(() => {
+    // Validar stock
     for (const item of items) {
       const prod = db.prepare('SELECT * FROM productos WHERE id = ? AND activo = 1').get(item.producto_id);
       if (!prod) throw new Error(`Producto ${item.producto_id} no encontrado`);
+      // cantidad siempre en unidades de inventario
       if (prod.stock < item.cantidad) throw new Error(`Stock insuficiente: ${prod.nombre}`);
     }
 
+    // Calcular total
     for (const item of items) {
       const prod = db.prepare('SELECT * FROM productos WHERE id = ?').get(item.producto_id);
-      total += prod.precio_venta * item.cantidad;
+      if (item.es_granel) {
+        // precio_venta está por unidad de inventario; cantidad es fracción de esa unidad
+        total += prod.precio_venta * item.cantidad;
+      } else {
+        total += prod.precio_venta * item.cantidad;
+      }
     }
     total -= (descuento || 0);
 
-    // Guardar con hora México
-    const venta = db.prepare('INSERT INTO ventas (folio, usuario_id, total, descuento, metodo_pago, notas, creado_en) VALUES (?, ?, ?, ?, ?, ?, ?)').run(folio, req.user.id, total, descuento || 0, metodo_pago || 'efectivo', notas || '', ahoraMexico());
+    const venta = db.prepare('INSERT INTO ventas (folio, usuario_id, total, descuento, metodo_pago, notas) VALUES (?, ?, ?, ?, ?, ?)').run(folio, req.user.id, total, descuento || 0, metodo_pago || 'efectivo', notas || '');
 
     for (const item of items) {
       const prod = db.prepare('SELECT * FROM productos WHERE id = ?').get(item.producto_id);
-      const subtotal = prod.precio_venta * item.cantidad;
+      const precio_unitario = item.es_granel
+        ? prod.precio_venta * item.cantidad  // subtotal granel
+        : prod.precio_venta;
+      const subtotal = item.es_granel
+        ? prod.precio_venta * item.cantidad
+        : prod.precio_venta * item.cantidad;
 
+      // precio_unitario en venta_items: para granel guardamos precio por unidad de venta
       let precio_unit_display = prod.precio_venta;
       if (item.es_granel && item.cantidad_venta && item.cantidad_venta > 0) {
         precio_unit_display = (prod.precio_venta * item.cantidad) / item.cantidad_venta;
@@ -313,17 +302,17 @@ app.post('/api/ventas', authMiddleware, (req, res) => {
       db.prepare(`INSERT INTO venta_items (venta_id, producto_id, cantidad, cantidad_venta, unidad_venta, es_granel, precio_unitario, subtotal)
         VALUES (?, ?, ?, ?, ?, ?, ?, ?)`).run(
         venta.lastInsertRowid, item.producto_id,
-        item.cantidad,
-        item.cantidad_venta || item.cantidad,
+        item.cantidad,                          // en unidades de inventario
+        item.cantidad_venta || item.cantidad,   // en unidades de venta (para mostrar)
         item.unidad_venta || null,
         item.es_granel ? 1 : 0,
         precio_unit_display,
         subtotal
       );
 
-      db.prepare('UPDATE productos SET stock = stock - ?, actualizado_en = ? WHERE id = ?').run(item.cantidad, ahoraMexico(), item.producto_id);
-      db.prepare('INSERT INTO movimientos (producto_id, tipo, cantidad, stock_anterior, stock_nuevo, nota, usuario_id, creado_en) VALUES (?, ?, ?, ?, ?, ?, ?, ?)').run(
-        item.producto_id, 'venta', item.cantidad, prod.stock, prod.stock - item.cantidad, `Venta ${folio}`, req.user.id, ahoraMexico()
+      db.prepare('UPDATE productos SET stock = stock - ?, actualizado_en = CURRENT_TIMESTAMP WHERE id = ?').run(item.cantidad, item.producto_id);
+      db.prepare('INSERT INTO movimientos (producto_id, tipo, cantidad, stock_anterior, stock_nuevo, nota, usuario_id) VALUES (?, ?, ?, ?, ?, ?, ?)').run(
+        item.producto_id, 'venta', item.cantidad, prod.stock, prod.stock - item.cantidad, `Venta ${folio}`, req.user.id
       );
     }
     return venta.lastInsertRowid;
@@ -341,8 +330,8 @@ app.get('/api/ventas', authMiddleware, (req, res) => {
   const { desde, hasta, usuario_id } = req.query;
   let query = `SELECT v.*, u.nombre as cajero FROM ventas v LEFT JOIN usuarios u ON v.usuario_id = u.id WHERE 1=1`;
   const params = [];
-  if (desde) { query += ' AND v.creado_en >= ?'; params.push(desde); }
-  if (hasta) { query += ' AND v.creado_en <= ?'; params.push(hasta); }
+  if (desde) { query += ' AND datetime(v.creado_en) >= datetime(?)'; params.push(desde); }
+  if (hasta) { query += ' AND datetime(v.creado_en) <= datetime(?)'; params.push(hasta); }
   if (usuario_id) { query += ' AND v.usuario_id = ?'; params.push(usuario_id); }
   query += ' ORDER BY v.creado_en DESC LIMIT 200';
   res.json(db.prepare(query).all(...params));
@@ -359,12 +348,12 @@ app.get('/api/ventas/:id', authMiddleware, (req, res) => {
 app.post('/api/cortes', authMiddleware, (req, res) => {
   const { fecha_inicio, notas } = req.body;
   const desde = fecha_inicio || new Date().toISOString().split('T')[0] + 'T00:00:00.000Z';
-  const ventas = db.prepare('SELECT * FROM ventas WHERE creado_en >= ?').all(desde);
+  const ventas = db.prepare('SELECT * FROM ventas WHERE datetime(creado_en) >= datetime(?) AND datetime(creado_en) <= datetime(CURRENT_TIMESTAMP)').all(desde);
   const total = ventas.reduce((s, v) => s + v.total, 0);
   const efectivo = ventas.filter(v => v.metodo_pago === 'efectivo').reduce((s, v) => s + v.total, 0);
   const tarjeta = ventas.filter(v => v.metodo_pago === 'tarjeta').reduce((s, v) => s + v.total, 0);
   const transferencia = ventas.filter(v => v.metodo_pago === 'transferencia').reduce((s, v) => s + v.total, 0);
-  const r = db.prepare('INSERT INTO cortes (usuario_id, fecha_inicio, total_ventas, num_ventas, efectivo, tarjeta, transferencia, notas, creado_en) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)').run(req.user.id, desde, total, ventas.length, efectivo, tarjeta, transferencia, notas || '', ahoraMexico());
+  const r = db.prepare('INSERT INTO cortes (usuario_id, fecha_inicio, total_ventas, num_ventas, efectivo, tarjeta, transferencia, notas) VALUES (?, ?, ?, ?, ?, ?, ?, ?)').run(req.user.id, desde, total, ventas.length, efectivo, tarjeta, transferencia, notas || '');
   res.json({ id: r.lastInsertRowid, total_ventas: total, num_ventas: ventas.length, efectivo, tarjeta, transferencia });
 });
 
@@ -374,11 +363,8 @@ app.get('/api/cortes', authMiddleware, (req, res) => {
 
 // ===== DASHBOARD =====
 app.get('/api/dashboard', authMiddleware, (req, res) => {
-  const now = new Date();
-  const localNow = new Date(now.getTime() + (-6 * 60) * 60000);
-  const hoy = localNow.toISOString().split('T')[0];
-
-  const ventas_hoy = db.prepare(`SELECT COUNT(*) as num, COALESCE(SUM(total),0) as total FROM ventas WHERE date(creado_en) = ?`).get(hoy);
+  const now = new Date(); const hoy = new Date(now.getTime() - now.getTimezoneOffset() * 60000).toISOString().split('T')[0];
+  const ventas_hoy = db.prepare(`SELECT COUNT(*) as num, COALESCE(SUM(total),0) as total FROM ventas WHERE date(creado_en, 'localtime') = ?`).get(hoy);
   const productos_total = db.prepare('SELECT COUNT(*) as num FROM productos WHERE activo = 1').get();
   const bajo_stock = db.prepare('SELECT COUNT(*) as num FROM productos WHERE activo = 1 AND stock <= stock_minimo').get();
   const ultimas_ventas = db.prepare('SELECT v.folio, v.total, v.metodo_pago, v.creado_en, u.nombre as cajero FROM ventas v LEFT JOIN usuarios u ON v.usuario_id = u.id ORDER BY v.creado_en DESC LIMIT 5').all();
@@ -396,19 +382,16 @@ app.get('/api/dashboard', authMiddleware, (req, res) => {
   const alertas_actividad = [];
   const fuera = db.prepare(`SELECT COUNT(*) as num FROM ventas WHERE date(creado_en) = ? AND (CAST(strftime('%H', creado_en) AS INTEGER) < 7 OR CAST(strftime('%H', creado_en) AS INTEGER) >= 22)`).get(hoy);
   if (fuera.num > 0) alertas_actividad.push({ tipo: 'warning', mensaje: `${fuera.num} venta(s) fuera de horario normal` });
-  const desc = db.prepare(`SELECT u.nombre, COUNT(v.id) as num_descuentos FROM ventas v LEFT JOIN usuarios u ON v.usuario_id = u.id WHERE date(v.creado_en) = ? AND v.descuento > 0 GROUP BY v.usuario_id HAVING num_descuentos >= 3`).all(hoy);
+  const desc = db.prepare(`SELECT u.nombre, COUNT(v.id) as num_descuentos FROM ventas v LEFT JOIN usuarios u ON v.usuario_id = u.id WHERE date(v.creado_en, 'localtime') = ? AND v.descuento > 0 GROUP BY v.usuario_id HAVING num_descuentos >= 3`).all(hoy);
   desc.forEach(d => alertas_actividad.push({ tipo: 'danger', mensaje: `${d.nombre} aplicó descuentos en ${d.num_descuentos} ventas hoy` }));
+  // deudas pendientes para el dashboard
   const deudas_count = db.prepare('SELECT COUNT(*) as num FROM deudas').get();
   res.json({ ventas_hoy, productos_total, bajo_stock, ultimas_ventas, alertas, actividad_cajeros, alertas_actividad, deudas_pendientes: deudas_count.num });
 });
 
 // ===== MONITOREO =====
 app.get('/api/cajeros/actividad', authMiddleware, solodueno, (req, res) => {
-  const dia = req.query.fecha || (() => {
-    const now = new Date();
-    const local = new Date(now.getTime() + (-6 * 60) * 60000);
-    return local.toISOString().split('T')[0];
-  })();
+  const dia = req.query.fecha || new Date().toISOString().split('T')[0];
   const actividad = db.prepare(`
     SELECT u.id, u.nombre, u.email, u.rol, u.activo,
       COUNT(v.id) as num_ventas,
@@ -419,12 +402,13 @@ app.get('/api/cajeros/actividad', authMiddleware, solodueno, (req, res) => {
       COALESCE(SUM(v.descuento), 0) as total_descuentos,
       MAX(v.creado_en) as ultima_venta
     FROM usuarios u
-    LEFT JOIN ventas v ON v.usuario_id = u.id AND date(v.creado_en) = ?
+    LEFT JOIN ventas v ON v.usuario_id = u.id AND date(v.creado_en, 'localtime') = ?
     WHERE u.rol != 'dueno'
     GROUP BY u.id ORDER BY total_vendido DESC
   `).all(dia);
   res.json({ fecha: dia, cajeros: actividad });
 });
+
 
 // ===== ENDPOINTS EXCLUSIVOS OS =====
 app.get('/api/os/usuarios', authMiddleware, soloOS, (req, res) => {
@@ -449,7 +433,7 @@ app.get('/api/deudas', authMiddleware, (req, res) => {
 app.post('/api/deudas', authMiddleware, (req, res) => {
   const { nombre, monto, envases, notas } = req.body;
   if (!nombre) return res.status(400).json({ error: 'El nombre es requerido' });
-  const r = db.prepare('INSERT INTO deudas (nombre, monto, envases, notas, usuario_id, creado_en) VALUES (?, ?, ?, ?, ?, ?)').run(nombre, monto || 0, envases || 0, notas || '', req.user.id, ahoraMexico());
+  const r = db.prepare('INSERT INTO deudas (nombre, monto, envases, notas, usuario_id) VALUES (?, ?, ?, ?, ?)').run(nombre, monto || 0, envases || 0, notas || '', req.user.id);
   res.json({ id: r.lastInsertRowid, mensaje: 'Deuda registrada' });
 });
 
@@ -468,7 +452,7 @@ app.delete('/api/deudas/:id', authMiddleware, (req, res) => {
   res.json({ mensaje: 'Deuda eliminada' });
 });
 
-// ===== EXPORTAR (fechas convertidas a hora México) =====
+// ===== EXPORTAR =====
 app.get('/api/exportar/ventas', authMiddleware, solodueno, (req, res) => {
   const { desde, hasta } = req.query;
   let query = `SELECT v.folio, v.creado_en as fecha, u.nombre as cajero, v.metodo_pago, v.descuento, v.total, v.notas FROM ventas v LEFT JOIN usuarios u ON v.usuario_id = u.id WHERE 1=1`;
@@ -477,8 +461,8 @@ app.get('/api/exportar/ventas', authMiddleware, solodueno, (req, res) => {
   if (hasta) { query += ' AND v.creado_en <= ?'; params.push(hasta); }
   query += ' ORDER BY v.creado_en DESC';
   const ventas = db.prepare(query).all(...params);
-  let csv = 'Folio,Fecha (México),Cajero,Método de Pago,Descuento,Total,Notas\n';
-  ventas.forEach(v => { csv += `"${v.folio}","${utcAMexico(v.fecha)}","${v.cajero||''}","${v.metodo_pago}","${v.descuento}","${v.total}","${v.notas||''}"\n`; });
+  let csv = 'Folio,Fecha,Cajero,Método de Pago,Descuento,Total,Notas\n';
+  ventas.forEach(v => { csv += `"${v.folio}","${v.fecha}","${v.cajero||''}","${v.metodo_pago}","${v.descuento}","${v.total}","${v.notas||''}"\n`; });
   res.setHeader('Content-Type', 'text/csv; charset=utf-8');
   res.setHeader('Content-Disposition', `attachment; filename="ventas_${new Date().toISOString().split('T')[0]}.csv"`);
   res.send('\uFEFF' + csv);
@@ -493,8 +477,8 @@ app.get('/api/exportar/detalle-ventas', authMiddleware, solodueno, (req, res) =>
   if (hasta) { query += ' AND v.creado_en <= ?'; params.push(hasta); }
   query += ' ORDER BY v.creado_en DESC';
   const items = db.prepare(query).all(...params);
-  let csv = 'Folio,Fecha (México),Cajero,Código,Producto,Cantidad (inv),Cantidad (venta),Unidad Venta,Precio Unitario,Subtotal\n';
-  items.forEach(i => { csv += `"${i.folio}","${utcAMexico(i.fecha)}","${i.cajero||''}","${i.codigo||''}","${i.producto||''}","${i.cantidad}","${i.cantidad_venta||i.cantidad}","${i.unidad_venta||''}","${i.precio_unitario}","${i.subtotal}"\n`; });
+  let csv = 'Folio,Fecha,Cajero,Código,Producto,Cantidad (inv),Cantidad (venta),Unidad Venta,Precio Unitario,Subtotal\n';
+  items.forEach(i => { csv += `"${i.folio}","${i.fecha}","${i.cajero||''}","${i.codigo||''}","${i.producto||''}","${i.cantidad}","${i.cantidad_venta||i.cantidad}","${i.unidad_venta||''}","${i.precio_unitario}","${i.subtotal}"\n`; });
   res.setHeader('Content-Type', 'text/csv; charset=utf-8');
   res.setHeader('Content-Disposition', `attachment; filename="detalle_ventas_${new Date().toISOString().split('T')[0]}.csv"`);
   res.send('\uFEFF' + csv);
@@ -511,8 +495,8 @@ app.get('/api/exportar/inventario', authMiddleware, solodueno, (req, res) => {
 
 app.get('/api/exportar/cortes', authMiddleware, solodueno, (req, res) => {
   const cortes = db.prepare(`SELECT c.creado_en as fecha, u.nombre as cajero, c.num_ventas, c.efectivo, c.tarjeta, c.transferencia, c.total_ventas, c.notas FROM cortes c LEFT JOIN usuarios u ON c.usuario_id = u.id ORDER BY c.creado_en DESC`).all();
-  let csv = 'Fecha (México),Cajero,Num Ventas,Efectivo,Tarjeta,Transferencia,Total,Notas\n';
-  cortes.forEach(c => { csv += `"${utcAMexico(c.fecha)}","${c.cajero||''}","${c.num_ventas}","${c.efectivo}","${c.tarjeta}","${c.transferencia}","${c.total_ventas}","${c.notas||''}"\n`; });
+  let csv = 'Fecha,Cajero,Num Ventas,Efectivo,Tarjeta,Transferencia,Total,Notas\n';
+  cortes.forEach(c => { csv += `"${c.fecha}","${c.cajero||''}","${c.num_ventas}","${c.efectivo}","${c.tarjeta}","${c.transferencia}","${c.total_ventas}","${c.notas||''}"\n`; });
   res.setHeader('Content-Type', 'text/csv; charset=utf-8');
   res.setHeader('Content-Disposition', `attachment; filename="cortes_${new Date().toISOString().split('T')[0]}.csv"`);
   res.send('\uFEFF' + csv);
