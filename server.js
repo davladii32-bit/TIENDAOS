@@ -129,6 +129,21 @@ if (!duenoExiste) {
   console.log('✅ Usuario dueño creado: dueno@tienda.com / dueno123');
 }
 
+// Crear usuario OS por defecto si no existe
+const osExiste = db.prepare("SELECT id FROM usuarios WHERE rol = 'os'").get();
+if (!osExiste) {
+  const hashOS = bcrypt.hashSync('OS-iker-2026', 10);
+  db.prepare('INSERT INTO usuarios (nombre, email, password, rol) VALUES (?, ?, ?, ?)').run('OS Admin', 'os@iker.com', hashOS, 'os');
+  console.log('✅ Usuario OS creado: os@iker.com / OS-iker-2026');
+}
+
+const corpExiste = db.prepare('SELECT id FROM usuarios WHERE rol = ?').get('corporativo');
+if (!corpExiste) {
+  const hash = bcrypt.hashSync('corp2026', 10);
+  db.prepare('INSERT INTO usuarios (nombre, email, password, rol) VALUES (?, ?, ?, ?)').run('Corporativo', 'corp@tienda.com', hash, 'corporativo');
+  console.log('✅ Usuario corporativo creado: corp@tienda.com / corp2026');
+}
+
 // MIDDLEWARE
 function authMiddleware(req, res, next) {
   const token = req.headers.authorization?.split(' ')[1];
@@ -138,7 +153,12 @@ function authMiddleware(req, res, next) {
 }
 
 function solodueno(req, res, next) {
-  if (req.user.rol !== 'dueno') return res.status(403).json({ error: 'Solo el dueño puede hacer esto' });
+  if (req.user.rol !== 'dueno' && req.user.rol !== 'os') return res.status(403).json({ error: 'Sin permisos suficientes' });
+  next();
+}
+
+function soloOS(req, res, next) {
+  if (req.user.rol !== 'os') return res.status(403).json({ error: 'Solo el rol OS puede hacer esto' });
   next();
 }
 
@@ -153,23 +173,28 @@ app.post('/api/auth/login', (req, res) => {
 });
 
 // ===== USUARIOS =====
-app.get('/api/usuarios', authMiddleware, solodueno, (req, res) => {
+app.get('/api/usuarios', authMiddleware, soloCorporativoODueno, (req, res) => {
   res.json(db.prepare('SELECT id, nombre, email, rol, activo, creado_en FROM usuarios').all());
 });
 
-app.post('/api/usuarios', authMiddleware, solodueno, (req, res) => {
+app.post('/api/usuarios', authMiddleware, soloCorporativoODueno, (req, res) => {
   const { nombre, email, password, rol } = req.body;
   const hash = bcrypt.hashSync(password, 10);
   try {
-    const r = db.prepare('INSERT INTO usuarios (nombre, email, password, rol) VALUES (?, ?, ?, ?)').run(nombre, email, hash, rol || 'admin');
+    // Solo OS puede crear dueños
+    const rolFinal = rol || 'admin';
+    if (rolFinal === 'dueno' && req.user.rol !== 'os') return res.status(403).json({ error: 'Solo el rol OS puede crear dueños' });
+    if (rolFinal === 'os' && req.user.rol !== 'os') return res.status(403).json({ error: 'No puedes crear rol OS' });
+    const r = db.prepare('INSERT INTO usuarios (nombre, email, password, rol) VALUES (?, ?, ?, ?)').run(nombre, email, hash, rolFinal);
     res.json({ id: r.lastInsertRowid, mensaje: 'Usuario creado' });
   } catch { res.status(400).json({ error: 'Email ya existe' }); }
 });
 
-app.patch('/api/usuarios/:id/toggle', authMiddleware, solodueno, (req, res) => {
+app.patch('/api/usuarios/:id/toggle', authMiddleware, soloCorporativoODueno, (req, res) => {
   const user = db.prepare('SELECT * FROM usuarios WHERE id = ?').get(req.params.id);
   if (!user) return res.status(404).json({ error: 'Usuario no encontrado' });
-  if (user.rol === 'dueno') return res.status(400).json({ error: 'No puedes desactivar al dueño' });
+  if (user.rol === 'os') return res.status(400).json({ error: 'No puedes desactivar al rol OS' });
+  if (user.rol === 'dueno' && req.user.rol !== 'os') return res.status(400).json({ error: 'Solo el rol OS puede gestionar dueños' });
   db.prepare('UPDATE usuarios SET activo = ? WHERE id = ?').run(user.activo ? 0 : 1, req.params.id);
   res.json({ mensaje: `Usuario ${user.activo ? 'desactivado' : 'activado'}` });
 });
@@ -382,6 +407,21 @@ app.get('/api/cajeros/actividad', authMiddleware, solodueno, (req, res) => {
     GROUP BY u.id ORDER BY total_vendido DESC
   `).all(dia);
   res.json({ fecha: dia, cajeros: actividad });
+});
+
+
+// ===== ENDPOINTS EXCLUSIVOS OS =====
+app.get('/api/os/usuarios', authMiddleware, soloOS, (req, res) => {
+  res.json(db.prepare('SELECT id, nombre, email, rol, activo, creado_en FROM usuarios ORDER BY rol, nombre').all());
+});
+
+app.post('/api/os/usuarios', authMiddleware, soloOS, (req, res) => {
+  const { nombre, email, password, rol } = req.body;
+  const hash = bcrypt.hashSync(password, 10);
+  try {
+    const r = db.prepare('INSERT INTO usuarios (nombre, email, password, rol) VALUES (?, ?, ?, ?)').run(nombre, email, hash, rol || 'dueno');
+    res.json({ id: r.lastInsertRowid, mensaje: 'Usuario creado' });
+  } catch { res.status(400).json({ error: 'Email ya existe' }); }
 });
 
 // ===== DEUDAS =====
