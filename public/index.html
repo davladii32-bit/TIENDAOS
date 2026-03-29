@@ -1,1037 +1,558 @@
-<!DOCTYPE html>
-<html lang="es">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>TiendaOS</title>
-<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=JetBrains+Mono:wght@400;500&family=Nunito:wght@300;400;500;600&display=swap" rel="stylesheet">
-<script src="https://cdnjs.cloudflare.com/ajax/libs/quagga/0.12.1/quagga.min.js"></script>
-<style>
-:root{--bg:#f8f7f4;--border:#e8e6e0;--accent:#2d6a4f;--accent2:#40916c;--warn:#f4a261;--text:#1a1a1a;--muted:#888880;--sidebar:#1a2e1f;--sidebar-text:#c8d8cb;--danger:#e63946;--success:#2d6a4f;}
-*{margin:0;padding:0;box-sizing:border-box;}
-body{font-family:'Nunito',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;}
-#loginScreen{min-height:100vh;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,#1a2e1f,#2d6a4f);}
-.login-box{background:white;border-radius:20px;padding:48px 40px;width:360px;box-shadow:0 20px 60px rgba(0,0,0,0.3);}
-.login-logo{font-family:'Syne',sans-serif;font-size:28px;font-weight:800;color:var(--accent);margin-bottom:4px;}
-.login-sub{font-size:13px;color:var(--muted);margin-bottom:32px;}
-.form-group{margin-bottom:16px;}
-.form-group label{display:block;font-size:12px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:6px;}
-.form-group input,.form-group select,.form-group textarea{width:100%;padding:12px 14px;border:2px solid var(--border);border-radius:10px;font-family:'Nunito',sans-serif;font-size:14px;transition:border-color .2s;outline:none;}
-.form-group input:focus,.form-group select:focus{border-color:var(--accent);}
-.btn{padding:12px 24px;border-radius:10px;border:none;cursor:pointer;font-family:'Nunito',sans-serif;font-weight:600;font-size:14px;transition:all .2s;}
-.btn-primary{background:var(--accent);color:white;}.btn-primary:hover{background:var(--accent2);}
-.btn-secondary{background:var(--border);color:var(--text);}
-.btn-danger{background:var(--danger);color:white;}
-.btn-sm{padding:7px 14px;font-size:12px;}
-.btn-full{width:100%;padding:14px;font-size:15px;}
-#app{display:none;min-height:100vh;}
-.layout{display:flex;min-height:100vh;}
-.sidebar{width:220px;background:var(--sidebar);flex-shrink:0;display:flex;flex-direction:column;padding:24px 0;position:fixed;height:100vh;overflow-y:auto;z-index:150;transition:transform 0.28s ease;}
-.sidebar-logo{font-family:'Syne',sans-serif;font-size:20px;font-weight:800;color:white;padding:0 20px 24px;border-bottom:1px solid rgba(255,255,255,0.1);}
-.sidebar-logo span{color:var(--accent2);}
-.sidebar-section{padding:16px 12px 8px;font-size:10px;letter-spacing:2px;color:rgba(255,255,255,0.3);font-family:'JetBrains Mono',monospace;text-transform:uppercase;}
-.nav-item{display:flex;align-items:center;gap:10px;padding:10px 20px;color:var(--sidebar-text);cursor:pointer;transition:all .2s;font-size:14px;font-weight:500;border-left:3px solid transparent;margin:2px 0;}
-.nav-item:hover{background:rgba(255,255,255,0.07);color:white;}
-.nav-item.active{background:rgba(45,106,79,0.3);border-left-color:var(--accent2);color:white;}
-.nav-item .icon{font-size:16px;width:20px;}
-.sidebar-user{margin-top:auto;padding:16px 20px;border-top:1px solid rgba(255,255,255,0.1);}
-.sidebar-user .name{font-size:13px;font-weight:600;color:white;}
-.sidebar-user .role{font-size:11px;color:var(--sidebar-text);font-family:'JetBrains Mono',monospace;}
-.logout-btn{margin-top:8px;font-size:11px;color:rgba(255,255,255,0.4);cursor:pointer;}
-.logout-btn:hover{color:white;}
-.main{margin-left:220px;flex:1;padding:32px;}
-.page{display:none;}.page.active{display:block;}
-.page-title{font-family:'Syne',sans-serif;font-size:26px;font-weight:800;margin-bottom:4px;}
-.page-sub{color:var(--muted);font-size:14px;margin-bottom:28px;}
-.stats-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:28px;}
-.stat-card{background:white;border-radius:14px;padding:20px;border:1px solid var(--border);position:relative;overflow:hidden;}
-.stat-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:var(--accent-color,var(--accent));}
-.stat-label{font-size:11px;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted);font-family:'JetBrains Mono',monospace;margin-bottom:8px;}
-.stat-value{font-family:'Syne',sans-serif;font-size:28px;font-weight:800;}
-.stat-desc{font-size:12px;color:var(--muted);margin-top:4px;}
-.table-card{background:white;border-radius:14px;border:1px solid var(--border);overflow:hidden;margin-bottom:20px;}
-.table-header{padding:16px 20px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;}
-.table-title{font-family:'Syne',sans-serif;font-weight:700;font-size:16px;}
-table{width:100%;border-collapse:collapse;}
-th{padding:10px 16px;text-align:left;font-size:11px;letter-spacing:1px;text-transform:uppercase;color:var(--muted);font-family:'JetBrains Mono',monospace;border-bottom:1px solid var(--border);background:#fafaf8;}
-td{padding:12px 16px;font-size:13px;border-bottom:1px solid #f5f5f0;}
-tr:last-child td{border-bottom:none;}tr:hover td{background:#fafaf8;}
-.badge{display:inline-block;padding:3px 8px;border-radius:6px;font-size:11px;font-weight:600;font-family:'JetBrains Mono',monospace;}
-.badge-green{background:#d8f3dc;color:#2d6a4f;}.badge-red{background:#ffe0dc;color:#e63946;}
-.badge-warn{background:#fff3cd;color:#f4a261;}.badge-blue{background:#dce9ff;color:#2b5fad;}
-.badge-purple{background:#ede9fe;color:#6d28d9;}
-.badge-orange{background:#ffedd5;color:#c2410c;}
-.badge-corp{background:#1a2e1f;color:#c8d8cb;}
-.badge-os{background:#0f172a;color:#38bdf8;}
-.search-row{display:flex;gap:12px;margin-bottom:20px;align-items:center;flex-wrap:wrap;}
-.search-input{flex:1;padding:10px 14px;border:2px solid var(--border);border-radius:10px;font-family:'Nunito',sans-serif;font-size:14px;outline:none;min-width:150px;}
-.search-input:focus{border-color:var(--accent);}
-.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:200;align-items:center;justify-content:center;}
-.modal-overlay.open{display:flex;}
-.modal{background:white;border-radius:16px;padding:32px;width:500px;max-height:85vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,0.2);}
-.modal h2{font-family:'Syne',sans-serif;font-size:20px;font-weight:800;margin-bottom:20px;}
-.modal-footer{display:flex;gap:10px;justify-content:flex-end;margin-top:24px;}
-.pos-layout{display:grid;grid-template-columns:1fr 380px;gap:20px;height:calc(100vh - 120px);}
-.pos-productos{background:white;border-radius:14px;border:1px solid var(--border);padding:20px;overflow-y:auto;}
-.pos-carrito{background:white;border-radius:14px;border:1px solid var(--border);padding:20px;display:flex;flex-direction:column;overflow-y:auto;}
-.scanner-bar{display:flex;gap:10px;margin-bottom:16px;}
-.scanner-input{flex:1;padding:12px 14px;border:2px solid var(--accent);border-radius:10px;font-size:14px;font-family:'JetBrains Mono',monospace;outline:none;}
-.prod-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:10px;}
-.prod-card{border:2px solid var(--border);border-radius:10px;padding:12px;cursor:pointer;transition:all .2s;text-align:center;position:relative;}
-.prod-card:hover{border-color:var(--accent);background:#f0fff4;}
-.prod-card .pname{font-size:12px;font-weight:600;margin-bottom:4px;}
-.prod-card .pprice{font-family:'JetBrains Mono',monospace;font-size:14px;color:var(--accent);font-weight:600;}
-.prod-card .pstock{font-size:10px;color:var(--muted);margin-top:2px;}
-.prod-card .granel-badge{position:absolute;top:6px;right:6px;background:#ede9fe;color:#6d28d9;font-size:9px;font-weight:700;padding:2px 5px;border-radius:4px;font-family:'JetBrains Mono',monospace;}
-.cart-items{flex:1;overflow-y:auto;margin-bottom:16px;}
-.cart-item{display:flex;align-items:center;gap:8px;padding:10px 0;border-bottom:1px solid var(--border);}
-.qty-ctrl{display:flex;align-items:center;gap:6px;}
-.qty-btn{width:24px;height:24px;border-radius:6px;border:none;background:var(--border);cursor:pointer;font-size:14px;font-weight:700;display:flex;align-items:center;justify-content:center;}
-.qty-num{font-family:'JetBrains Mono',monospace;font-size:13px;width:24px;text-align:center;}
-.cart-total{border-top:2px solid var(--border);padding-top:12px;}
-.total-row{display:flex;justify-content:space-between;margin-bottom:6px;font-size:13px;}
-.total-final{font-family:'Syne',sans-serif;font-size:22px;font-weight:800;color:var(--accent);}
-.pay-btns{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-top:12px;}
-.pay-btn{padding:10px;border-radius:8px;border:2px solid var(--border);background:white;cursor:pointer;font-size:11px;font-weight:600;transition:all .2s;}
-.pay-btn.selected{border-color:var(--accent);background:#f0fff4;color:var(--accent);}
-.denom-btn{padding:8px 4px;border-radius:8px;border:2px solid var(--border);background:white;cursor:pointer;font-size:12px;font-weight:700;font-family:'JetBrains Mono',monospace;transition:all .2s;}
-.denom-btn:hover{border-color:var(--accent);background:#f0fff4;color:var(--accent);}
-.denom-btn.selected{border-color:var(--accent);background:var(--accent);color:white;}
-#scannerCam{position:relative;width:100%;height:200px;border-radius:10px;overflow:hidden;background:#000;margin-bottom:12px;display:none;}
-#scannerCam video{width:100%;height:100%;object-fit:cover;}
-#scannerCam canvas{position:absolute;top:0;left:0;}
-.alert{padding:12px 16px;border-radius:10px;font-size:13px;margin-bottom:12px;}
-.alert-success{background:#d8f3dc;color:#2d6a4f;}.alert-error{background:#ffe0dc;color:#e63946;}
-.alert-warn{background:#fff3cd;color:#856404;}
-.stock-low{color:var(--danger);font-weight:700;}.stock-ok{color:var(--success);}
-.cajero-card{background:white;border-radius:14px;border:1px solid var(--border);padding:20px;display:flex;align-items:center;justify-content:space-between;gap:16px;margin-bottom:12px;}
-.cajero-info{flex:1;}.cajero-nombre{font-weight:700;font-size:15px;margin-bottom:4px;}
-.cajero-stats{display:flex;gap:12px;font-size:12px;color:var(--muted);font-family:'JetBrains Mono',monospace;flex-wrap:wrap;}
-.cajero-total{font-family:'Syne',sans-serif;font-size:22px;font-weight:800;color:var(--accent);white-space:nowrap;}
-.alerta-card{padding:12px 16px;border-radius:10px;font-size:13px;margin-bottom:8px;display:flex;align-items:center;gap:8px;}
-.alerta-warning{background:#fff3cd;color:#856404;border-left:4px solid var(--warn);}
-.alerta-danger{background:#ffe0dc;color:#e63946;border-left:4px solid var(--danger);}
-.export-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:16px;margin-bottom:24px;}
-.export-card{background:white;border-radius:14px;border:1px solid var(--border);padding:24px;}
-.export-card h3{font-family:'Syne',sans-serif;font-size:16px;font-weight:700;margin-bottom:6px;}
-.export-card p{font-size:13px;color:var(--muted);margin-bottom:16px;}
-/* GRANEL */
-.granel-info{background:#f5f3ff;border:1px solid #c4b5fd;border-radius:10px;padding:10px 14px;font-size:12px;color:#6d28d9;margin-bottom:10px;font-family:'JetBrains Mono',monospace;}
-.granel-input-row{display:flex;align-items:center;gap:10px;margin-top:8px;}
-.granel-input-row input{width:120px;padding:12px;border:2px solid #c4b5fd;border-radius:8px;font-family:'JetBrains Mono',monospace;font-size:18px;text-align:center;outline:none;}
-.granel-input-row input:focus{border-color:#7c3aed;}
-.granel-input-row span{font-size:16px;color:#6d28d9;font-weight:700;}
-/* HAMBURGUESA */
-.menu-toggle{display:none;position:fixed;top:14px;left:14px;z-index:300;background:var(--sidebar);color:white;border:none;border-radius:10px;width:44px;height:44px;font-size:22px;cursor:pointer;align-items:center;justify-content:center;box-shadow:0 4px 12px rgba(0,0,0,0.3);}
-.sidebar-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:149;}
-.sidebar-overlay.open{display:block;}
-/* MOVIL */
-@media(max-width:768px){
-  .menu-toggle{display:flex;}
-  .sidebar{transform:translateX(-100%);}
-  .sidebar.open{transform:translateX(0);}
-  .nav-item span,.sidebar-logo,.sidebar-section,.sidebar-user .name,.sidebar-user .role{display:block!important;}
-  .nav-item{display:flex!important;}
-  .main{margin-left:0;padding:16px;padding-top:72px;}
-  .stats-grid{grid-template-columns:repeat(2,1fr);gap:10px;}
-  .stat-value{font-size:20px;}
-  .dash-grid{display:flex!important;flex-direction:column;gap:16px;}
-  .pos-layout{grid-template-columns:1fr;height:auto;gap:16px;}
-  .pos-productos{max-height:50vh;}
-  .scanner-bar{flex-wrap:wrap;}
-  .scanner-input{min-width:100%;order:-1;}
-  .scanner-bar .btn{flex:1;}
-  .pay-btns{gap:5px;}
-  .pay-btn{padding:8px 4px;font-size:10px;}
-  .prod-grid{grid-template-columns:repeat(2,1fr);}
-  .search-row{flex-direction:column;align-items:stretch;}
-  .search-row .search-input,.search-row select,.search-row .btn{width:100%;}
-  .table-card{overflow-x:auto;}
-  .table-card table{min-width:460px;}
-  .modal-overlay{align-items:flex-end;padding:0;}
-  .modal{width:100%;max-width:100%;border-radius:20px 20px 0 0;max-height:90vh;padding:24px 20px;}
-  .export-grid{grid-template-columns:1fr;}
-  .login-box{width:92vw;padding:32px 20px;}
-  .cajero-card{flex-direction:column;align-items:flex-start;gap:10px;}
-  .cajero-total{font-size:18px;}
-}
-@media(max-width:400px){.stat-value{font-size:17px;}.page-title{font-size:20px;}}
-</style>
-</head>
-<body>
-<button class="menu-toggle" id="menuToggle" onclick="toggleSidebar()">☰</button>
-<div class="sidebar-overlay" id="sidebarOverlay" onclick="closeSidebar()"></div>
+const express = require('express');
+const sqlite3 = require('better-sqlite3');
+const bcrypt = require('bcryptjs');
+const jwt = require('jsonwebtoken');
+const cors = require('cors');
+const path = require('path');
+const fs = require('fs');
 
-<div id="loginScreen">
-  <div class="login-box">
-    <div class="login-logo">Abarrotes <span>Iker</span></div>
-    <div class="login-sub">Sistema de gestión de inventario</div>
-    <div id="loginAlert"></div>
-    <div class="form-group"><label>Correo electrónico</label><input type="email" id="loginEmail" placeholder="correo@tienda.com" value="dueno@tienda.com"></div>
-    <div class="form-group"><label>Contraseña</label><input type="password" id="loginPassword" placeholder="••••••••" value="dueno123"></div>
-    <button class="btn btn-primary btn-full" onclick="login()">Entrar al sistema</button>
-  </div>
-</div>
+const app = express();
+const PORT = process.env.PORT || 3000;
+const JWT_SECRET = process.env.JWT_SECRET || 'tienda_secret_2026_cambiar_en_produccion';
 
-<div id="app">
-  <div class="layout">
-    <nav class="sidebar" id="sidebar">
-      <div class="sidebar-logo">Abarrotes <span>Iker</span></div>
-      <div class="sidebar-section">Principal</div>
-      <div class="nav-item active" onclick="showPage('dashboard',this)"><span class="icon">📊</span><span>Dashboard</span></div>
-      <div class="nav-item" onclick="showPage('pos',this)"><span class="icon">🛒</span><span>Punto de Venta</span></div>
-      <div class="sidebar-section">Gestión</div>
-      <div class="nav-item" onclick="showPage('inventario',this)"><span class="icon">📦</span><span>Inventario</span></div>
-      <div class="nav-item" onclick="showPage('ventas',this)"><span class="icon">💰</span><span>Ventas</span></div>
-      <div class="nav-item" onclick="showPage('corte',this)"><span class="icon">🧾</span><span>Corte de Caja</span></div>
-      <div class="sidebar-section">Tienda</div>
-      <div class="nav-item" onclick="showPage('deudas',this)"><span class="icon">📋</span><span>Deudas</span></div>
-      <div class="sidebar-section" id="sectionCorp" style="display:none">Corporativo</div>
-      <div class="nav-item" id="navCorp" style="display:none" onclick="showPage('corporativo',this)"><span class="icon">🏢</span><span>Gestión Usuarios</span></div>
-      <div class="sidebar-section" id="sectionAdmin" style="display:none">Admin</div>
-      <div class="nav-item" id="navUsuarios" style="display:none" onclick="showPage('usuarios',this)"><span class="icon">👥</span><span>Usuarios</span></div>
-      <div class="nav-item" id="navCajeros" style="display:none" onclick="showPage('cajeros',this)"><span class="icon">🔍</span><span>Monitoreo</span></div>
-      <div class="nav-item" id="navExportar" style="display:none" onclick="showPage('exportar',this)"><span class="icon">📥</span><span>Exportar</span></div>
-      <div class="sidebar-section" id="sectionOS" style="display:none">Sistema OS</div>
-      <div class="nav-item" id="navOS" style="display:none" onclick="showPage('os',this)"><span class="icon">⚙️</span><span>Gestión OS</span></div>
-      <div class="sidebar-user">
-        <div class="name" id="sidebarName">—</div>
-        <div class="role" id="sidebarRole">—</div>
-        <div class="logout-btn" onclick="logout()">Cerrar sesión</div>
-      </div>
-    </nav>
-    <main class="main">
-      <!-- DASHBOARD -->
-      <div class="page active" id="page-dashboard">
-        <div class="page-title">Dashboard</div>
-        <div class="page-sub" id="dashFecha">—</div>
-        <div id="dashAlertasActividad" style="margin-bottom:16px"></div>
-        <div class="stats-grid">
-          <div class="stat-card" style="--accent-color:#2d6a4f"><div class="stat-label">Ventas Hoy</div><div class="stat-value" id="dashVentasNum">0</div><div class="stat-desc">transacciones</div></div>
-          <div class="stat-card" style="--accent-color:#40916c"><div class="stat-label">Total Hoy</div><div class="stat-value" id="dashVentasTotal">$0</div><div class="stat-desc">en ventas</div></div>
-          <div class="stat-card" style="--accent-color:#e76f51"><div class="stat-label">Productos</div><div class="stat-value" id="dashProductos">0</div><div class="stat-desc">en catálogo</div></div>
-          <div class="stat-card" style="--accent-color:#e63946"><div class="stat-label">Stock Bajo</div><div class="stat-value" id="dashBajoStock">0</div><div class="stat-desc">productos</div></div>
-        </div>
-        <div class="dash-grid" style="display:grid;grid-template-columns:1fr 1fr;gap:20px">
-          <div class="table-card"><div class="table-header"><span class="table-title">Últimas Ventas</span></div><table><thead><tr><th>Folio</th><th>Cajero</th><th>Total</th></tr></thead><tbody id="dashUltimasVentas"></tbody></table></div>
-          <div class="table-card"><div class="table-header"><span class="table-title">⚠️ Alertas de Stock</span></div><table><thead><tr><th>Producto</th><th>Stock</th><th>Mínimo</th></tr></thead><tbody id="dashAlertas"></tbody></table></div>
-        </div>
-        <div id="dashCajerosSection" style="display:none;margin-top:20px">
-          <div style="font-family:'Syne',sans-serif;font-size:18px;font-weight:800;margin-bottom:16px">👥 Actividad de Cajeros Hoy</div>
-          <div id="dashCajeros"></div>
-        </div>
-      </div>
-      <!-- PUNTO DE VENTA -->
-      <div class="page" id="page-pos">
-        <div class="page-title">Punto de Venta</div>
-        <div class="page-sub">Escanea o selecciona productos</div>
-        <div class="pos-layout">
-          <div class="pos-productos">
-            <div class="scanner-bar">
-              <input class="scanner-input" id="scanInput" placeholder="Escanear código o buscar..." onkeypress="scanEnter(event)" autofocus>
-              <button class="btn btn-secondary" onclick="toggleCam()">📷 Cámara</button>
-              <button class="btn btn-secondary" onclick="loadProductosPos()">🔄</button>
-            </div>
-            <div id="scannerCam"><video id="scanVideo"></video><canvas id="scanCanvas"></canvas></div>
-            <div id="posAlert"></div>
-            <div class="prod-grid" id="posProductos"></div>
-          </div>
-          <div class="pos-carrito">
-            <div style="font-family:'Syne',sans-serif;font-weight:700;font-size:16px;margin-bottom:12px">🛒 Carrito</div>
-            <div class="cart-items" id="cartItems"><div style="color:var(--muted);font-size:13px;text-align:center;padding:20px">Sin productos</div></div>
-            <div class="cart-total">
-              <div class="total-row"><span>Subtotal</span><span id="cartSubtotal">$0.00</span></div>
-              <div class="total-row"><span>Descuento</span><input type="number" id="cartDescuento" value="0" style="width:70px;text-align:right;border:1px solid var(--border);border-radius:6px;padding:2px 6px;font-size:13px"></div>
-              <div class="total-row"><span style="font-weight:700">Total</span><span class="total-final" id="cartTotal">$0.00</span></div>
-              <div style="font-size:12px;color:var(--muted);margin:8px 0">Método de pago:</div>
-              <div class="pay-btns">
-                <button class="pay-btn selected" id="pay-efectivo" onclick="selectPago('efectivo')">💵 Efectivo</button>
-                <button class="pay-btn" id="pay-tarjeta" onclick="selectPago('tarjeta')">💳 Tarjeta</button>
-                <button class="pay-btn" id="pay-transferencia" onclick="selectPago('transferencia')">📱 Transfer.</button>
-              </div>
-              <div id="seccionEfectivo" style="margin-top:12px;padding:12px;background:#f0fff4;border-radius:10px;border:1px solid #b7e4c7">
-                <div style="font-size:11px;color:var(--muted);margin-bottom:8px;font-weight:700;letter-spacing:1px">PAGO CON:</div>
-                <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:5px;margin-bottom:8px">
-                  <button class="denom-btn" onclick="setDenom(20,event)">$20</button>
-                  <button class="denom-btn" onclick="setDenom(50,event)">$50</button>
-                  <button class="denom-btn" onclick="setDenom(100,event)">$100</button>
-                  <button class="denom-btn" onclick="setDenom(200,event)">$200</button>
-                  <button class="denom-btn" onclick="setDenom(500,event)">$500</button>
-                  <button class="denom-btn" onclick="setDenom(1000,event)">$1000</button>
-                  <button class="denom-btn" style="grid-column:span 2" onclick="setDenom(null,event)">Otro monto</button>
-                </div>
-                <input type="number" id="montoPagado" placeholder="Monto recibido $" oninput="calcularCambio()" style="width:100%;padding:10px;border:2px solid var(--accent);border-radius:8px;font-size:15px;font-weight:700;font-family:'JetBrains Mono',monospace;text-align:right;outline:none;margin-bottom:8px">
-                <div id="cambioDisplay" style="display:none;padding:10px;background:white;border-radius:8px;border:2px solid var(--accent);display:flex;justify-content:space-between;align-items:center">
-                  <span style="font-size:13px;font-weight:700">CAMBIO:</span>
-                  <span id="cambioMonto" style="font-family:'Syne',sans-serif;font-size:26px;font-weight:800;color:var(--accent)">$0.00</span>
-                </div>
-              </div>
-              <button class="btn btn-primary btn-full" style="margin-top:12px;font-size:16px" onclick="cobrar()">✅ COBRAR</button>
-              <button class="btn btn-secondary btn-full" style="margin-top:8px" onclick="limpiarCarrito()">🗑 Limpiar</button>
-            </div>
-          </div>
-        </div>
-      </div>
-      <!-- INVENTARIO -->
-      <div class="page" id="page-inventario">
-        <div class="page-title">Inventario</div>
-        <div class="page-sub">Gestión de productos y stock</div>
-        <div class="search-row">
-          <input class="search-input" id="invBuscar" placeholder="Buscar por nombre o código..." oninput="loadInventario()">
-          <select id="invCategoria" onchange="loadInventario()" style="padding:10px;border:2px solid var(--border);border-radius:10px;font-family:'Nunito',sans-serif">
-            <option value="">Todas las categorías</option>
-            <option>Abarrotes</option><option>Bebidas</option><option>Lácteos</option><option>Carnes</option>
-            <option>Frutas y Verduras</option><option>Limpieza</option><option>Cuidado Personal</option><option>Botanas</option><option>General</option>
-          </select>
-          <label style="display:flex;align-items:center;gap:6px;font-size:13px"><input type="checkbox" id="invBajoStock" onchange="loadInventario()"> Solo bajo stock</label>
-          <button class="btn btn-primary" onclick="nuevoProducto()">+ Nuevo Producto</button>
-        </div>
-        <div class="table-card"><table><thead><tr><th>Código</th><th>Nombre</th><th>Categoría</th><th>Precio</th><th>Stock</th><th>Mínimo</th><th>Tipo</th><th>Acciones</th></tr></thead><tbody id="invTable"></tbody></table></div>
-      </div>
-      <!-- VENTAS -->
-      <div class="page" id="page-ventas">
-        <div class="page-title">Historial de Ventas</div>
-        <div class="page-sub">Registro de todas las transacciones</div>
-        <div class="search-row">
-          <input type="date" id="ventasDesde" onchange="loadVentas()" style="padding:10px;border:2px solid var(--border);border-radius:10px">
-          <input type="date" id="ventasHasta" onchange="loadVentas()" style="padding:10px;border:2px solid var(--border);border-radius:10px">
-          <button class="btn btn-secondary" onclick="resetVentasFiltro()">Hoy</button>
-        </div>
-        <div class="table-card"><table><thead><tr><th>Folio</th><th>Fecha</th><th>Cajero</th><th>Pago</th><th>Total</th><th>Ver</th></tr></thead><tbody id="ventasTable"></tbody></table></div>
-      </div>
-      <!-- CORTE -->
-      <div class="page" id="page-corte">
-        <div class="page-title">Corte de Caja</div>
-        <div class="page-sub">Cierre y resumen de ventas</div>
-        <div class="table-card" style="padding:28px;max-width:500px">
-          <div class="form-group"><label>Desde (fecha y hora)</label><input type="datetime-local" id="corteDesde"></div>
-          <div class="form-group"><label>Notas del corte</label><textarea id="corteNotas" rows="3" style="width:100%;padding:12px;border:2px solid var(--border);border-radius:10px;font-family:'Nunito',sans-serif;resize:vertical"></textarea></div>
-          <button class="btn btn-primary btn-full" onclick="hacerCorte()">🧾 Generar Corte</button>
-        </div>
-        <div id="corteResultado" style="display:none" class="table-card"></div>
-        <div class="table-card" style="margin-top:20px">
-          <div class="table-header"><span class="table-title">Historial de Cortes</span></div>
-          <table><thead><tr><th>Fecha</th><th>Cajero</th><th>Ventas</th><th>Efectivo</th><th>Tarjeta</th><th>Total</th></tr></thead><tbody id="cortesTable"></tbody></table>
-        </div>
-      </div>
-      <!-- USUARIOS -->
-      <div class="page" id="page-usuarios">
-        <div class="page-title">Usuarios</div><div class="page-sub">Solo visible para el dueño</div>
-        <div style="margin-bottom:16px"><button class="btn btn-primary" onclick="openModal('modalUsuario')">+ Nuevo Usuario</button></div>
-        <div class="table-card"><table><thead><tr><th>Nombre</th><th>Email</th><th>Rol</th><th>Estado</th><th>Acción</th></tr></thead><tbody id="usuariosTable"></tbody></table></div>
-      </div>
-      <!-- MONITOREO -->
-      <div class="page" id="page-cajeros">
-        <div class="page-title">Monitoreo de Cajeros</div><div class="page-sub">Actividad detallada por empleado</div>
-        <div class="search-row">
-          <input type="date" id="cajeroFecha" onchange="loadCajerosActividad()" style="padding:10px;border:2px solid var(--border);border-radius:10px">
-          <button class="btn btn-secondary" onclick="setCajeroHoy()">Hoy</button>
-        </div>
-        <div id="alertasActividad" style="margin-bottom:16px"></div>
-        <div id="cajerosLista"></div>
-      </div>
-      <!-- EXPORTAR -->
-      <div class="page" id="page-exportar">
-        <div class="page-title">Exportar a Excel</div><div class="page-sub">Descarga tu información en formato CSV</div>
-        <div class="table-card" style="padding:20px;margin-bottom:20px">
-          <div style="font-weight:700;margin-bottom:12px">Filtrar por fecha</div>
-          <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap">
-            <div class="form-group" style="margin:0"><label>Desde</label><input type="date" id="exportDesde" style="padding:10px;border:2px solid var(--border);border-radius:10px"></div>
-            <div class="form-group" style="margin:0"><label>Hasta</label><input type="date" id="exportHasta" style="padding:10px;border:2px solid var(--border);border-radius:10px"></div>
-            <button class="btn btn-secondary" style="margin-top:18px" onclick="setExportHoy()">Solo hoy</button>
-            <button class="btn btn-secondary" style="margin-top:18px" onclick="setExportMes()">Este mes</button>
-            <button class="btn btn-secondary" style="margin-top:18px" onclick="clearExportFechas()">Todo</button>
-          </div>
-        </div>
-        <div class="export-grid">
-          <div class="export-card"><h3>💰 Ventas</h3><p>Folio, fecha, cajero, método de pago y total.</p><button class="btn btn-primary" onclick="exportar('ventas')">⬇️ Descargar Ventas</button></div>
-          <div class="export-card"><h3>🧾 Detalle de Productos</h3><p>Qué productos se vendieron, cantidad y precio.</p><button class="btn btn-primary" onclick="exportar('detalle-ventas')">⬇️ Descargar Detalle</button></div>
-          <div class="export-card"><h3>📦 Inventario Actual</h3><p>Lista con precios, stock actual y mínimo.</p><button class="btn btn-primary" onclick="exportar('inventario')">⬇️ Descargar Inventario</button></div>
-          <div class="export-card"><h3>🧾 Cortes de Caja</h3><p>Historial con desglose por método de pago.</p><button class="btn btn-primary" onclick="exportar('cortes')">⬇️ Descargar Cortes</button></div>
-        </div>
-        <div class="table-card" style="padding:24px">
-          <h3 style="font-family:'Syne',sans-serif;font-size:16px;font-weight:700;margin-bottom:8px">🗄️ Backup de Base de Datos</h3>
-          <p style="font-size:13px;color:var(--muted);margin-bottom:16px">Copia completa de tu base de datos.</p>
-          <button class="btn btn-danger" onclick="descargarBackup()">⬇️ Descargar Backup Completo</button>
-        </div>
-      </div>
+app.use(cors());
+app.use(express.json());
+app.use(express.static(path.join(__dirname, 'public')));
+
+const DB_PATH = process.env.DATABASE_PATH || './tienda.db';
+const db = new sqlite3(DB_PATH);
+
+db.exec(`
+  CREATE TABLE IF NOT EXISTS usuarios (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    nombre TEXT NOT NULL,
+    email TEXT UNIQUE NOT NULL,
+    password TEXT NOT NULL,
+    rol TEXT NOT NULL DEFAULT 'admin',
+    activo INTEGER DEFAULT 1,
+    creado_en DATETIME DEFAULT CURRENT_TIMESTAMP
+  );
+
+  CREATE TABLE IF NOT EXISTS productos (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    codigo TEXT UNIQUE NOT NULL,
+    nombre TEXT NOT NULL,
+    categoria TEXT DEFAULT 'General',
+    precio_compra REAL DEFAULT 0,
+    precio_venta REAL NOT NULL,
+    stock REAL DEFAULT 0,
+    stock_minimo REAL DEFAULT 5,
+    unidad TEXT DEFAULT 'pza',
+    tipo_venta TEXT DEFAULT 'pieza',
+    unidad_inventario TEXT,
+    unidad_venta TEXT,
+    activo INTEGER DEFAULT 1,
+    creado_en DATETIME DEFAULT CURRENT_TIMESTAMP,
+    actualizado_en DATETIME DEFAULT CURRENT_TIMESTAMP
+  );
+
+  CREATE TABLE IF NOT EXISTS ventas (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    folio TEXT UNIQUE NOT NULL,
+    usuario_id INTEGER,
+    total REAL NOT NULL,
+    descuento REAL DEFAULT 0,
+    metodo_pago TEXT DEFAULT 'efectivo',
+    notas TEXT,
+    creado_en DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (usuario_id) REFERENCES usuarios(id)
+  );
+
+  CREATE TABLE IF NOT EXISTS venta_items (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    venta_id INTEGER,
+    producto_id INTEGER,
+    cantidad REAL NOT NULL,
+    cantidad_venta REAL,
+    unidad_venta TEXT,
+    es_granel INTEGER DEFAULT 0,
+    precio_unitario REAL NOT NULL,
+    subtotal REAL NOT NULL,
+    FOREIGN KEY (venta_id) REFERENCES ventas(id),
+    FOREIGN KEY (producto_id) REFERENCES productos(id)
+  );
+
+  CREATE TABLE IF NOT EXISTS movimientos (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    producto_id INTEGER,
+    tipo TEXT NOT NULL,
+    cantidad REAL NOT NULL,
+    stock_anterior REAL,
+    stock_nuevo REAL,
+    nota TEXT,
+    usuario_id INTEGER,
+    creado_en DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (producto_id) REFERENCES productos(id),
+    FOREIGN KEY (usuario_id) REFERENCES usuarios(id)
+  );
+
+  CREATE TABLE IF NOT EXISTS cortes (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    usuario_id INTEGER,
+    fecha_inicio DATETIME,
+    fecha_fin DATETIME DEFAULT CURRENT_TIMESTAMP,
+    total_ventas REAL DEFAULT 0,
+    num_ventas INTEGER DEFAULT 0,
+    efectivo REAL DEFAULT 0,
+    tarjeta REAL DEFAULT 0,
+    transferencia REAL DEFAULT 0,
+    notas TEXT,
+    creado_en DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (usuario_id) REFERENCES usuarios(id)
+  );
+
+  CREATE TABLE IF NOT EXISTS deudas (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    nombre TEXT NOT NULL,
+    monto REAL DEFAULT 0,
+    envases INTEGER DEFAULT 0,
+    notas TEXT,
+    usuario_id INTEGER,
+    creado_en DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (usuario_id) REFERENCES usuarios(id)
+  );
+`);
+
+// Migrar columnas granel si no existen (para bases de datos ya creadas)
+try { db.exec(`ALTER TABLE productos ADD COLUMN tipo_venta TEXT DEFAULT 'pieza'`); } catch(e) {}
+try { db.exec(`ALTER TABLE productos ADD COLUMN unidad_inventario TEXT`); } catch(e) {}
+try { db.exec(`ALTER TABLE productos ADD COLUMN unidad_venta TEXT`); } catch(e) {}
+try { db.exec(`ALTER TABLE venta_items ADD COLUMN cantidad_venta REAL`); } catch(e) {}
+try { db.exec(`ALTER TABLE venta_items ADD COLUMN unidad_venta TEXT`); } catch(e) {}
+try { db.exec(`ALTER TABLE venta_items ADD COLUMN es_granel INTEGER DEFAULT 0`); } catch(e) {}
 
 
-      <!-- CORPORATIVO -->
-      <div class="page" id="page-corporativo">
-        <div class="page-title">🏢 Gestión de Usuarios</div>
-        <div class="page-sub">Crear y administrar dueños y administradores</div>
-        <div style="margin-bottom:16px">
-          <button class="btn btn-primary" onclick="openModal('modalCorpUsuario')">+ Nuevo Usuario</button>
-        </div>
-        <div class="table-card">
-          <table><thead><tr><th>Nombre</th><th>Email</th><th>Rol</th><th>Estado</th><th>Acción</th></tr></thead>
-          <tbody id="corpUsuariosTable"></tbody></table>
-        </div>
-      </div>
-
-      <!-- DEUDAS -->
-      <div class="page" id="page-deudas">
-        <div class="page-title">Deudas y Fiados</div>
-        <div class="page-sub">Registro de personas que deben dinero o envases</div>
-        <div style="display:flex;gap:12px;margin-bottom:20px;flex-wrap:wrap;align-items:center">
-          <div id="deudasResumen" style="display:flex;gap:12px;flex:1;flex-wrap:wrap"></div>
-          <button class="btn btn-primary" onclick="openModal('modalDeuda')">+ Nueva Deuda</button>
-        </div>
-        <div id="deudasLista"></div>
-      </div>
-
-      <!-- OS -->
-      <div class="page" id="page-os">
-        <div class="page-title">Gestión OS</div>
-        <div class="page-sub">Control total del sistema — rol exclusivo</div>
-        <div style="margin-bottom:16px"><button class="btn btn-primary" onclick="openModal('modalOSUsuario')">+ Nuevo Usuario</button></div>
-        <div class="table-card">
-          <table><thead><tr><th>Nombre</th><th>Email</th><th>Rol</th><th>Estado</th><th>Acción</th></tr></thead><tbody id="osUsuariosTable"></tbody></table>
-        </div>
-      </div>
-    </main>
-  </div>
-</div>
-
-<!-- MODALES -->
-<div class="modal-overlay" id="modalProducto">
-  <div class="modal">
-    <h2 id="modalProdTitle">Nuevo Producto</h2>
-    <input type="hidden" id="prodId">
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
-      <div class="form-group" style="grid-column:1/-1"><label>Código de barras *</label><input id="prodCodigo" placeholder="Escanea o escribe el código"></div>
-      <div class="form-group" style="grid-column:1/-1"><label>Nombre del producto *</label><input id="prodNombre" placeholder="Ej: Cloro 5L"></div>
-      <div class="form-group"><label>Categoría</label>
-        <select id="prodCategoria"><option>Abarrotes</option><option>Bebidas</option><option>Lácteos</option><option>Carnes</option><option>Frutas y Verduras</option><option>Limpieza</option><option>Cuidado Personal</option><option>Botanas</option><option>General</option></select>
-      </div>
-      <div class="form-group"><label>Tipo de venta</label>
-        <select id="prodTipoVenta" onchange="toggleGranelFields()">
-          <option value="pieza">Por pieza / unidad</option>
-          <option value="granel_liquido">A granel — Líquido (lt/ml)</option>
-          <option value="granel_solido">A granel — Sólido (kg/g)</option>
-        </select>
-      </div>
-      <div id="campoUnidadNormal" class="form-group"><label>Unidad</label><input id="prodUnidad" placeholder="pza, kg, lt..." value="pza"></div>
-      <div id="camposGranel" style="display:none;grid-column:1/-1">
-        <div style="background:#f5f3ff;border:1px solid #c4b5fd;border-radius:10px;padding:14px;margin-bottom:4px">
-          <div style="font-size:12px;font-weight:700;color:#6d28d9;margin-bottom:10px;text-transform:uppercase;letter-spacing:1px">⚖️ Configuración a granel</div>
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
-            <div class="form-group" style="margin:0"><label>Inventario en</label><select id="prodUnidadGranel"><option value="lt">Litros (lt)</option><option value="kg">Kilogramos (kg)</option></select></div>
-            <div class="form-group" style="margin:0"><label>Vender en</label><select id="prodUnidadVenta"><option value="ml">Mililitros (ml)</option><option value="lt">Litros (lt)</option></select></div>
-          </div>
-          <div style="font-size:11px;color:#7c3aed;margin-top:8px;font-family:'JetBrains Mono',monospace" id="granelExplica">📦 Stock en litros. Cajero escribe ml al vender.</div>
-        </div>
-      </div>
-      <div class="form-group"><label>Precio de compra</label><input type="number" id="prodPrecioCompra" placeholder="0.00" step="0.01"></div>
-      <div class="form-group"><label id="labelPrecioVenta">Precio de venta *</label><input type="number" id="prodPrecioVenta" placeholder="0.00" step="0.01"><div id="hintPrecioVenta" style="font-size:11px;color:var(--muted);margin-top:4px"></div></div>
-      <div class="form-group"><label id="labelStock">Stock inicial</label><input type="number" id="prodStock" placeholder="0" step="0.001"></div>
-      <div class="form-group"><label id="labelStockMin">Stock mínimo</label><input type="number" id="prodStockMin" placeholder="5" step="0.001"></div>
-    </div>
-    <div class="modal-footer">
-      <button class="btn btn-secondary" onclick="closeModal('modalProducto')">Cancelar</button>
-      <button class="btn btn-primary" onclick="guardarProducto()">Guardar</button>
-    </div>
-  </div>
-</div>
-
-<div class="modal-overlay" id="modalStock">
-  <div class="modal">
-    <h2>Ajustar Stock</h2>
-    <input type="hidden" id="stockProdId">
-    <div id="stockProdNombre" style="font-weight:700;margin-bottom:8px;color:var(--accent)"></div>
-    <div id="stockGranelInfo"></div>
-    <div class="form-group"><label>Tipo de movimiento</label><select id="stockTipo"><option value="entrada">Entrada (compra/devolución)</option><option value="salida">Salida (pérdida/merma)</option></select></div>
-    <div class="form-group"><label id="stockCantLabel">Cantidad</label><input type="number" id="stockCantidad" min="0.001" step="0.001" value="1"></div>
-    <div class="form-group"><label>Nota</label><input id="stockNota" placeholder="Motivo del movimiento"></div>
-    <div class="modal-footer">
-      <button class="btn btn-secondary" onclick="closeModal('modalStock')">Cancelar</button>
-      <button class="btn btn-primary" onclick="guardarStock()">Actualizar Stock</button>
-    </div>
-  </div>
-</div>
-
-<div class="modal-overlay" id="modalVenta">
-  <div class="modal"><h2 id="modalVentaTitle">Detalle de Venta</h2><div id="modalVentaContent"></div>
-    <div class="modal-footer"><button class="btn btn-secondary" onclick="closeModal('modalVenta')">Cerrar</button></div>
-  </div>
-</div>
-
-<div class="modal-overlay" id="modalUsuario">
-  <div class="modal">
-    <h2>Nuevo Usuario</h2>
-    <div class="form-group"><label>Nombre completo</label><input id="userNombre" placeholder="Nombre del empleado"></div>
-    <div class="form-group"><label>Correo electrónico</label><input type="email" id="userEmail" placeholder="correo@tienda.com"></div>
-    <div class="form-group"><label>Contraseña</label><input type="password" id="userPassword" placeholder="Mínimo 6 caracteres"></div>
-    <div class="form-group"><label>Rol</label><select id="userRol"><option value="dueno">Dueño de Tienda</option><option value="admin">Administrador</option><option value="cajero">Cajero</option></select></div>
-    <div class="modal-footer">
-      <button class="btn btn-secondary" onclick="closeModal('modalUsuario')">Cancelar</button>
-      <button class="btn btn-primary" onclick="guardarUsuario()">Crear Usuario</button>
-    </div>
-  </div>
-</div>
-
-
-<!-- Modal OS Usuario -->
-<div class="modal-overlay" id="modalOSUsuario">
-  <div class="modal" style="max-width:420px">
-    <h2>Nuevo Usuario</h2>
-    <div class="form-group"><label>Nombre completo</label><input id="osUserNombre" placeholder="Nombre"></div>
-    <div class="form-group"><label>Correo electrónico</label><input type="email" id="osUserEmail" placeholder="correo@tienda.com"></div>
-    <div class="form-group"><label>Contraseña</label><input type="password" id="osUserPassword" placeholder="Mínimo 6 caracteres"></div>
-    <div class="form-group"><label>Rol</label>
-      <select id="osUserRol">
-        <option value="dueno">Dueño de tienda</option>
-        <option value="admin">Administrador</option>
-        <option value="cajero">Cajero</option>
-      </select>
-    </div>
-    <div class="modal-footer">
-      <button class="btn btn-secondary" onclick="closeModal('modalOSUsuario')">Cancelar</button>
-      <button class="btn btn-primary" onclick="guardarOSUsuario()">Crear</button>
-    </div>
-  </div>
-</div>
-
-
-<!-- Modal Corporativo Usuario -->
-<div class="modal-overlay" id="modalCorpUsuario">
-  <div class="modal" style="max-width:420px">
-    <h2>Nuevo Usuario</h2>
-    <div class="form-group"><label>Nombre completo</label><input id="corpUserNombre" placeholder="Nombre"></div>
-    <div class="form-group"><label>Correo electrónico</label><input type="email" id="corpUserEmail" placeholder="correo@tienda.com"></div>
-    <div class="form-group"><label>Contraseña</label><input type="password" id="corpUserPassword" placeholder="Mínimo 6 caracteres"></div>
-    <div class="form-group"><label>Rol</label>
-      <select id="corpUserRol">
-        <option value="dueno">Dueño de tienda</option>
-        <option value="admin">Administrador</option>
-        <option value="cajero">Cajero</option>
-      </select>
-    </div>
-    <div class="modal-footer">
-      <button class="btn btn-secondary" onclick="closeModal('modalCorpUsuario')">Cancelar</button>
-      <button class="btn btn-primary" onclick="guardarCorpUsuario()">Crear</button>
-    </div>
-  </div>
-</div>
-
-<!-- Modal Granel -->
-<div class="modal-overlay" id="modalGranel">
-  <div class="modal" style="max-width:380px">
-    <h2 id="granelModalTitle">Vender a granel</h2>
-    <input type="hidden" id="granelProdId">
-    <div id="granelProdInfo" style="font-size:13px;color:var(--muted);margin-bottom:12px"></div>
-    <div class="granel-info" id="granelStockInfo"></div>
-    <div class="form-group">
-      <label id="granelCantLabel">Cantidad a vender</label>
-      <div class="granel-input-row">
-        <input type="number" id="granelCantidad" min="1" step="1" placeholder="0" oninput="actualizarPrecioGranel()">
-        <span id="granelUnidadLabel">ml</span>
-      </div>
-      <div style="font-size:11px;color:var(--muted);margin-top:6px" id="granelEquivInfo"></div>
-    </div>
-    <div style="font-size:15px;color:var(--accent);font-weight:700;margin-bottom:4px;font-family:'JetBrains Mono',monospace" id="granelPrecioPreview"></div>
-    <div class="modal-footer">
-      <button class="btn btn-secondary" onclick="closeModal('modalGranel')">Cancelar</button>
-      <button class="btn btn-primary" onclick="confirmarGranel()">➕ Agregar al carrito</button>
-    </div>
-  </div>
-</div>
-
-
-<!-- Modal Deuda -->
-<div class="modal-overlay" id="modalDeuda">
-  <div class="modal" style="max-width:420px">
-    <h2 id="modalDeudaTitle">Nueva Deuda</h2>
-    <input type="hidden" id="deudaId">
-    <div class="form-group"><label>Nombre de la persona *</label><input id="deudaNombre" placeholder="Ej: Juan García"></div>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
-      <div class="form-group"><label>Monto en dinero ($)</label><input type="number" id="deudaMonto" placeholder="0.00" step="0.01" min="0"></div>
-      <div class="form-group"><label>Envases retornables</label><input type="number" id="deudaEnvases" placeholder="0" min="0"></div>
-    </div>
-    <div class="form-group"><label>Notas</label><textarea id="deudaNotas" rows="3" style="width:100%;padding:12px;border:2px solid var(--border);border-radius:10px;font-family:'Nunito',sans-serif;resize:vertical" placeholder="Descripción, producto, fecha acordada..."></textarea></div>
-    <div class="modal-footer">
-      <button class="btn btn-secondary" onclick="closeModal('modalDeuda');limpiarFormDeuda()">Cancelar</button>
-      <button class="btn btn-primary" onclick="guardarDeuda()">Guardar</button>
-    </div>
-  </div>
-</div>
-
-<script>
-const API='';
-let token=localStorage.getItem('token'),user=null,carrito=[],metodoPago='efectivo',camActiva=false,productosCache=[],granelProdActual=null;
-try{user=JSON.parse(localStorage.getItem('user')||'null');}catch(e){user=null;}
-
-
-// Helper para fechas con timezone México
-function fmtFecha(str) {
-  if (!str) return '—';
-  // Forzar que se interprete como UTC agregando Z si no la tiene
-  const s = str.includes('Z') || str.includes('+') ? str : str.replace(' ', 'T') + 'Z';
-  return new Date(s).toLocaleString('es-MX', {timeZone:'America/Mexico_City'});
-}
-function fmtHora(str) {
-  if (!str) return 'Sin actividad';
-  const s = str.includes('Z') || str.includes('+') ? str : str.replace(' ', 'T') + 'Z';
-  return new Date(s).toLocaleTimeString('es-MX', {timeZone:'America/Mexico_City'});
+const corpExiste = db.prepare('SELECT id FROM usuarios WHERE rol = ?').get('corporativo');
+if (!corpExiste) {
+  const hashCorp = bcrypt.hashSync('corp2026', 10);
+  db.prepare('INSERT INTO usuarios (nombre, email, password, rol) VALUES (?, ?, ?, ?)').run('Corporativo', 'corp@tienda.com', hashCorp, 'corporativo');
+  console.log('✅ Usuario corporativo creado: corp@tienda.com / corp2026');
 }
 
-function esGranel(p){return p&&(p.tipo_venta==='granel_liquido'||p.tipo_venta==='granel_solido');}
-function factorGranel(inv,venta){if(inv==='lt'&&venta==='ml')return 1000;if(inv==='kg'&&venta==='g')return 1000;return 1;}
-function precioPorUnidadVenta(p){if(!esGranel(p))return p.precio_venta;return p.precio_venta/factorGranel(p.unidad_inventario||p.unidad,p.unidad_venta||'ml');}
-
-async function api(method,path,body){
-  const res=await fetch(API+'/api'+path,{method,headers:{'Content-Type':'application/json','Authorization':'Bearer '+token},body:body?JSON.stringify(body):undefined});
-  const data=await res.json();if(!res.ok)throw new Error(data.error||'Error');return data;
+// Crear dueño por defecto
+const duenoExiste = db.prepare('SELECT id FROM usuarios WHERE rol = ?').get('dueno');
+if (!duenoExiste) {
+  const hash = bcrypt.hashSync('dueno123', 10);
+  db.prepare('INSERT INTO usuarios (nombre, email, password, rol) VALUES (?, ?, ?, ?)').run('Dueño', 'dueno@tienda.com', hash, 'dueno');
+  console.log('✅ Usuario dueño creado: dueno@tienda.com / dueno123');
 }
 
-async function login(){
-  const email=document.getElementById('loginEmail').value,password=document.getElementById('loginPassword').value;
-  try{
-    const data=await fetch(API+'/api/auth/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email,password})}).then(r=>r.json());
-    if(data.error)throw new Error(data.error);
-    token=data.token;user=data.user;localStorage.setItem('token',token);localStorage.setItem('user',JSON.stringify(user));initApp();
-  }catch(e){document.getElementById('loginAlert').innerHTML=`<div class="alert alert-error">${e.message}</div>`;}
+// Crear usuario OS por defecto si no existe
+const osExiste = db.prepare("SELECT id FROM usuarios WHERE rol = 'os'").get();
+if (!osExiste) {
+  const hashOS = bcrypt.hashSync('OS-iker-2026', 10);
+  db.prepare('INSERT INTO usuarios (nombre, email, password, rol) VALUES (?, ?, ?, ?)').run('OS Admin', 'os@iker.com', hashOS, 'os');
+  console.log('✅ Usuario OS creado: os@iker.com / OS-iker-2026');
 }
 
-function logout(){localStorage.clear();token=null;user=null;document.getElementById('app').style.display='none';document.getElementById('loginScreen').style.display='flex';}
 
-function initApp(){
-  if(!token||!user)return;
-  document.getElementById('loginScreen').style.display='none';document.getElementById('app').style.display='block';
-  document.getElementById('sidebarName').textContent=user.nombre;document.getElementById('sidebarRole').textContent=user.rol.toUpperCase();
-  if(user.rol==='dueno'||user.rol==='os'){['sectionAdmin','navUsuarios','navCajeros','navExportar','dashCajerosSection'].forEach(id=>{const el=document.getElementById(id);if(el)el.style.display=id==='sectionAdmin'?'block':'flex';});document.getElementById('dashCajerosSection').style.display='block';}
-  if(user.rol==='os'){document.getElementById('navOS').style.display='flex';document.getElementById('sectionOS').style.display='block';}
-  document.getElementById('dashFecha').textContent=new Date().toLocaleDateString('es-MX',{weekday:'long',year:'numeric',month:'long',day:'numeric'});
-  document.getElementById('corteDesde').value=new Date().toISOString().split('T')[0]+'T00:00';
-  loadDashboard();loadProductosPos();
+
+// MIDDLEWARE
+function authMiddleware(req, res, next) {
+  const token = req.headers.authorization?.split(' ')[1];
+  if (!token) return res.status(401).json({ error: 'Token requerido' });
+  try { req.user = jwt.verify(token, JWT_SECRET); next(); }
+  catch { res.status(401).json({ error: 'Token inválido' }); }
 }
 
-function toggleSidebar(){document.getElementById('sidebar').classList.toggle('open');document.getElementById('sidebarOverlay').classList.toggle('open');}
-function closeSidebar(){document.getElementById('sidebar').classList.remove('open');document.getElementById('sidebarOverlay').classList.remove('open');}
 
-function showPage(page,el){
-  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
-  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
-  document.getElementById('page-'+page).classList.add('active');if(el)el.classList.add('active');
-  if(window.innerWidth<=768)closeSidebar();
-  if(page==='inventario')loadInventario();
-  if(page==='ventas'){resetVentasFiltro();loadVentas();}
-  if(page==='corte')loadCortes();if(page==='usuarios')loadUsuarios();
-  if(page==='cajeros'){setCajeroHoy();loadCajerosActividad();}
-  if(page==='exportar')setExportHoy();
-  if(page==='deudas')loadDeudas();
-  if(page==='corporativo')loadCorpUsuarios();
-  if(page==='os')loadOSUsuarios();
+function soloCorporativo(req, res, next) {
+  if (req.user.rol !== 'corporativo') return res.status(403).json({ error: 'Solo el corporativo puede hacer esto' });
+  next();
 }
 
-async function loadDashboard(){
-  try{
-    const d=await api('GET','/dashboard');
-    document.getElementById('dashVentasNum').textContent=d.ventas_hoy.num||0;
-    document.getElementById('dashVentasTotal').textContent='$'+(d.ventas_hoy.total||0).toFixed(2);
-    document.getElementById('dashProductos').textContent=d.productos_total.num||0;
-    document.getElementById('dashBajoStock').textContent=d.bajo_stock.num||0;
-    document.getElementById('dashUltimasVentas').innerHTML=d.ultimas_ventas.map(v=>`<tr><td><span class="badge badge-blue">${v.folio}</span></td><td>${v.cajero||'—'}</td><td>$${v.total.toFixed(2)}</td></tr>`).join('')||'<tr><td colspan="3" style="color:var(--muted);text-align:center">Sin ventas hoy</td></tr>';
-    document.getElementById('dashAlertas').innerHTML=d.alertas.map(p=>`<tr><td>${p.nombre}</td><td class="stock-low">${p.stock}</td><td>${p.stock_minimo}</td></tr>`).join('')||'<tr><td colspan="3" style="color:var(--success);text-align:center">✅ Todo en orden</td></tr>';
-    if(d.alertas_actividad?.length>0)document.getElementById('dashAlertasActividad').innerHTML=d.alertas_actividad.map(a=>`<div class="alerta-card alerta-${a.tipo}">⚠️ ${a.mensaje}</div>`).join('');
-    if(user?.rol==='dueno'&&d.actividad_cajeros){
-      document.getElementById('dashCajeros').innerHTML=d.actividad_cajeros.map(c=>`<div class="cajero-card"><div class="cajero-info"><div class="cajero-nombre">${c.nombre} <span class="badge ${c.activo?'badge-green':'badge-red'}">${c.activo?'Activo':'Bloqueado'}</span></div><div class="cajero-stats"><span>${c.num_ventas} ventas</span><span>Última: ${c.ultima_venta?fmtHora(c.ultima_venta):'Sin actividad'}</span></div></div><div class="cajero-total">$${(c.total_vendido||0).toFixed(2)}</div>${c.activo?`<button class="btn btn-danger btn-sm" onclick="toggleCajero(${c.id},'${c.nombre}',true)">🚫 Bloquear</button>`:`<button class="btn btn-primary btn-sm" onclick="toggleCajero(${c.id},'${c.nombre}',false)">✅ Activar</button>`}</div>`).join('')||'<div style="color:var(--muted);font-size:13px">Sin empleados</div>';
+function corporativoODueno(req, res, next) {
+  if (req.user.rol !== 'corporativo' && req.user.rol !== 'dueno') return res.status(403).json({ error: 'Sin permisos' });
+  next();
+}
+
+function solodueno(req, res, next) {
+  if (req.user.rol !== 'dueno' && req.user.rol !== 'os') return res.status(403).json({ error: 'Sin permisos suficientes' });
+  next();
+}
+
+function soloOS(req, res, next) {
+  if (req.user.rol !== 'os') return res.status(403).json({ error: 'Solo el rol OS puede hacer esto' });
+  next();
+}
+
+// ===== AUTH =====
+app.post('/api/auth/login', (req, res) => {
+  const { email, password } = req.body;
+  const user = db.prepare('SELECT * FROM usuarios WHERE email = ? AND activo = 1').get(email);
+  if (!user || !bcrypt.compareSync(password, user.password))
+    return res.status(401).json({ error: 'Credenciales incorrectas' });
+  const token = jwt.sign({ id: user.id, nombre: user.nombre, rol: user.rol }, JWT_SECRET, { expiresIn: '12h' });
+  res.json({ token, user: { id: user.id, nombre: user.nombre, rol: user.rol, email: user.email } });
+});
+
+// ===== USUARIOS =====
+app.get('/api/usuarios', authMiddleware, solodueno, (req, res) => {
+  res.json(db.prepare('SELECT id, nombre, email, rol, activo, creado_en FROM usuarios').all());
+});
+
+app.post('/api/usuarios', authMiddleware, solodueno, (req, res) => {
+  const { nombre, email, password, rol } = req.body;
+  const hash = bcrypt.hashSync(password, 10);
+  try {
+    // Solo OS puede crear dueños
+    const rolFinal = rol || 'admin';
+    if (rolFinal === 'dueno' && req.user.rol !== 'os') return res.status(403).json({ error: 'Solo el rol OS puede crear dueños' });
+    if (rolFinal === 'os' && req.user.rol !== 'os') return res.status(403).json({ error: 'No puedes crear rol OS' });
+    const r = db.prepare('INSERT INTO usuarios (nombre, email, password, rol) VALUES (?, ?, ?, ?)').run(nombre, email, hash, rolFinal);
+    res.json({ id: r.lastInsertRowid, mensaje: 'Usuario creado' });
+  } catch { res.status(400).json({ error: 'Email ya existe' }); }
+});
+
+app.patch('/api/usuarios/:id/toggle', authMiddleware, solodueno, (req, res) => {
+  const user = db.prepare('SELECT * FROM usuarios WHERE id = ?').get(req.params.id);
+  if (!user) return res.status(404).json({ error: 'Usuario no encontrado' });
+  if (user.rol === 'os') return res.status(400).json({ error: 'No puedes desactivar al rol OS' });
+  if (user.rol === 'dueno' && req.user.rol !== 'os') return res.status(400).json({ error: 'Solo el rol OS puede gestionar dueños' });
+  db.prepare('UPDATE usuarios SET activo = ? WHERE id = ?').run(user.activo ? 0 : 1, req.params.id);
+  res.json({ mensaje: `Usuario ${user.activo ? 'desactivado' : 'activado'}` });
+});
+
+// ===== PRODUCTOS =====
+app.get('/api/productos', authMiddleware, (req, res) => {
+  const { buscar, categoria, bajo_stock } = req.query;
+  let query = 'SELECT * FROM productos WHERE activo = 1';
+  const params = [];
+  if (buscar) { query += ' AND (nombre LIKE ? OR codigo LIKE ?)'; params.push(`%${buscar}%`, `%${buscar}%`); }
+  if (categoria) { query += ' AND categoria = ?'; params.push(categoria); }
+  if (bajo_stock === '1') query += ' AND stock <= stock_minimo';
+  query += ' ORDER BY nombre ASC';
+  res.json(db.prepare(query).all(...params));
+});
+
+app.get('/api/productos/codigo/:codigo', authMiddleware, (req, res) => {
+  const prod = db.prepare('SELECT * FROM productos WHERE codigo = ? AND activo = 1').get(req.params.codigo);
+  if (!prod) return res.status(404).json({ error: 'Producto no encontrado' });
+  res.json(prod);
+});
+
+app.post('/api/productos', authMiddleware, (req, res) => {
+  const { codigo, nombre, categoria, precio_compra, precio_venta, stock, stock_minimo, unidad, tipo_venta, unidad_inventario, unidad_venta } = req.body;
+  try {
+    const r = db.prepare(`INSERT INTO productos (codigo, nombre, categoria, precio_compra, precio_venta, stock, stock_minimo, unidad, tipo_venta, unidad_inventario, unidad_venta)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`).run(
+      codigo, nombre, categoria || 'General', precio_compra || 0, precio_venta,
+      stock || 0, stock_minimo || 5, unidad || 'pza',
+      tipo_venta || 'pieza', unidad_inventario || null, unidad_venta || null
+    );
+    res.json({ id: r.lastInsertRowid, mensaje: 'Producto creado' });
+  } catch { res.status(400).json({ error: 'Código ya existe' }); }
+});
+
+app.put('/api/productos/:id', authMiddleware, (req, res) => {
+  const { nombre, categoria, precio_compra, precio_venta, stock_minimo, unidad, tipo_venta, unidad_inventario, unidad_venta } = req.body;
+  db.prepare(`UPDATE productos SET nombre=?, categoria=?, precio_compra=?, precio_venta=?, stock_minimo=?, unidad=?,
+    tipo_venta=?, unidad_inventario=?, unidad_venta=?, actualizado_en=CURRENT_TIMESTAMP WHERE id=?`
+  ).run(nombre, categoria, precio_compra, precio_venta, stock_minimo, unidad, tipo_venta || 'pieza', unidad_inventario || null, unidad_venta || null, req.params.id);
+  res.json({ mensaje: 'Producto actualizado' });
+});
+
+app.patch('/api/productos/:id/stock', authMiddleware, (req, res) => {
+  const { cantidad, tipo, nota } = req.body;
+  const prod = db.prepare('SELECT * FROM productos WHERE id = ?').get(req.params.id);
+  if (!prod) return res.status(404).json({ error: 'Producto no encontrado' });
+  const nuevo_stock = tipo === 'entrada' ? prod.stock + cantidad : prod.stock - cantidad;
+  if (nuevo_stock < 0) return res.status(400).json({ error: 'Stock insuficiente' });
+  db.prepare('UPDATE productos SET stock = ?, actualizado_en = CURRENT_TIMESTAMP WHERE id = ?').run(nuevo_stock, req.params.id);
+  db.prepare('INSERT INTO movimientos (producto_id, tipo, cantidad, stock_anterior, stock_nuevo, nota, usuario_id) VALUES (?, ?, ?, ?, ?, ?, ?)').run(req.params.id, tipo, cantidad, prod.stock, nuevo_stock, nota || '', req.user.id);
+  res.json({ mensaje: 'Stock actualizado', stock_nuevo: nuevo_stock });
+});
+
+app.delete('/api/productos/:id', authMiddleware, solodueno, (req, res) => {
+  db.prepare('UPDATE productos SET activo = 0 WHERE id = ?').run(req.params.id);
+  res.json({ mensaje: 'Producto eliminado' });
+});
+
+// ===== VENTAS (con soporte granel) =====
+app.post('/api/ventas', authMiddleware, (req, res) => {
+  const { items, metodo_pago, descuento, notas } = req.body;
+  if (!items?.length) return res.status(400).json({ error: 'Sin productos' });
+  const folio = 'V' + Date.now();
+  let total = 0;
+
+  const insertVenta = db.transaction(() => {
+    // Validar stock
+    for (const item of items) {
+      const prod = db.prepare('SELECT * FROM productos WHERE id = ? AND activo = 1').get(item.producto_id);
+      if (!prod) throw new Error(`Producto ${item.producto_id} no encontrado`);
+      // cantidad siempre en unidades de inventario
+      if (prod.stock < item.cantidad) throw new Error(`Stock insuficiente: ${prod.nombre}`);
     }
-  }catch(e){console.error(e);}
-}
 
-async function toggleCajero(id,nombre,bloquear){if(bloquear&&!confirm(`¿Bloquear acceso a ${nombre}?`))return;try{await api('PATCH','/usuarios/'+id+'/toggle');loadDashboard();}catch(e){alert(e.message);}}
-
-async function loadProductosPos(){try{productosCache=await api('GET','/productos');renderPosProductos(productosCache);}catch(e){}}
-
-function renderPosProductos(prods){
-  document.getElementById('posProductos').innerHTML=prods.slice(0,60).map(p=>{
-    const tag=esGranel(p)?`<div class="granel-badge">${p.unidad_inventario||p.unidad}</div>`:'';
-    const precio=esGranel(p)?`$${precioPorUnidadVenta(p).toFixed(3)}/${p.unidad_venta||'ml'}`:`$${p.precio_venta.toFixed(2)}`;
-    const stock=esGranel(p)?`${parseFloat(p.stock).toFixed(2)} ${p.unidad_inventario||p.unidad}`:`${p.stock} ${p.unidad}`;
-    return `<div class="prod-card" onclick="${esGranel(p)?`abrirModalGranel(${p.id})`:`addToCart(${p.id})`}">${tag}<div class="pname">${p.nombre}</div><div class="pprice">${precio}</div><div class="pstock ${p.stock<=p.stock_minimo?'stock-low':'stock-ok'}">${stock}</div></div>`;
-  }).join('')||'<div style="color:var(--muted);font-size:13px">Sin productos.</div>';
-}
-
-function scanEnter(e){
-  if(e.key!=='Enter')return;
-  const val=document.getElementById('scanInput').value.trim();if(!val)return;
-  const prod=productosCache.find(p=>p.codigo===val||p.nombre.toLowerCase().includes(val.toLowerCase()));
-  if(prod){esGranel(prod)?abrirModalGranel(prod.id):addToCart(prod.id);document.getElementById('scanInput').value='';}
-  else showPosAlert('Producto no encontrado: '+val,'error');
-}
-
-function addToCart(prodId){
-  const prod=productosCache.find(p=>p.id===prodId);if(!prod)return;
-  if(prod.stock<=0)return showPosAlert('Sin stock: '+prod.nombre,'error');
-  const exist=carrito.find(c=>c.producto_id===prodId&&!c.esGranel);
-  if(exist){if(exist.cantidad>=prod.stock)return showPosAlert('Stock máximo','warn');exist.cantidad++;}
-  else carrito.push({producto_id:prodId,nombre:prod.nombre,precio:prod.precio_venta,cantidad:1,stock:prod.stock,esGranel:false});
-  renderCart();
-}
-
-function abrirModalGranel(prodId){
-  const prod=productosCache.find(p=>p.id===prodId);if(!prod)return;
-  granelProdActual=prod;
-  const ui=prod.unidad_inventario||prod.unidad,uv=prod.unidad_venta||'ml',factor=factorGranel(ui,uv),sd=parseFloat(prod.stock);
-  document.getElementById('granelProdId').value=prodId;
-  document.getElementById('granelModalTitle').textContent=prod.nombre;
-  document.getElementById('granelProdInfo').textContent=prod.categoria;
-  document.getElementById('granelStockInfo').textContent=`📦 Disponible: ${sd.toFixed(3)} ${ui}  (${(sd*factor).toFixed(0)} ${uv})`;
-  document.getElementById('granelCantLabel').textContent=`Cantidad a vender (${uv})`;
-  document.getElementById('granelUnidadLabel').textContent=uv;
-  document.getElementById('granelEquivInfo').textContent=`Precio: $${precioPorUnidadVenta(prod).toFixed(4)} por ${uv}`;
-  document.getElementById('granelCantidad').value='';document.getElementById('granelPrecioPreview').textContent='';
-  openModal('modalGranel');setTimeout(()=>document.getElementById('granelCantidad').focus(),300);
-}
-
-function actualizarPrecioGranel(){
-  if(!granelProdActual)return;
-  const cant=parseFloat(document.getElementById('granelCantidad').value)||0;
-  const ui=granelProdActual.unidad_inventario||granelProdActual.unidad,uv=granelProdActual.unidad_venta||'ml';
-  const desc=cant/factorGranel(ui,uv),total=cant*precioPorUnidadVenta(granelProdActual);
-  document.getElementById('granelPrecioPreview').textContent=cant>0?`💰 Total: $${total.toFixed(2)}   —   descuenta: ${desc.toFixed(4)} ${ui}`:'';
-}
-
-function confirmarGranel(){
-  const prod=granelProdActual;if(!prod)return;
-  const cantVenta=parseFloat(document.getElementById('granelCantidad').value);
-  if(!cantVenta||cantVenta<=0)return alert('Escribe una cantidad válida');
-  const ui=prod.unidad_inventario||prod.unidad,uv=prod.unidad_venta||'ml';
-  const factor=factorGranel(ui,uv),descuenta=cantVenta/factor;
-  if(descuenta>parseFloat(prod.stock))return showPosAlert(`Stock insuficiente. Disponible: ${parseFloat(prod.stock).toFixed(3)} ${ui}`,'error');
-  const precioU=precioPorUnidadVenta(prod);
-  const exist=carrito.find(c=>c.producto_id===prod.id&&c.esGranel);
-  if(exist){exist.cantidadVenta+=cantVenta;exist.cantidad=exist.cantidadVenta/factor;exist.precio=exist.cantidadVenta*precioU;}
-  else carrito.push({producto_id:prod.id,nombre:prod.nombre,precio:cantVenta*precioU,precioUnitario:precioU,cantidad:descuenta,cantidadVenta:cantVenta,unidadVenta:uv,unidadInv:ui,stock:parseFloat(prod.stock),esGranel:true});
-  closeModal('modalGranel');renderCart();showPosAlert(`✅ ${prod.nombre} — ${cantVenta} ${uv}`,'success');
-}
-
-function renderCart(){
-  if(!carrito.length){
-    document.getElementById('cartItems').innerHTML='<div style="color:var(--muted);font-size:13px;text-align:center;padding:20px">Sin productos</div>';
-    document.getElementById('cartSubtotal').textContent='$0.00';document.getElementById('cartTotal').textContent='$0.00';calcularCambio();return;
-  }
-  document.getElementById('cartItems').innerHTML=carrito.map((c,i)=>{
-    const totalItem=c.esGranel?c.precio:c.precio*c.cantidad;
-    const labelCant=c.esGranel?`${c.cantidadVenta} ${c.unidadVenta}`:`x${c.cantidad}`;
-    const labelPrecio=c.esGranel?`$${c.precioUnitario.toFixed(4)}/${c.unidadVenta}`:`$${c.precio.toFixed(2)} c/u`;
-    return `<div class="cart-item"><div style="flex:1"><div style="font-size:13px;font-weight:600">${c.nombre}</div><div style="font-size:12px;color:var(--muted);font-family:'JetBrains Mono',monospace">${labelCant} · ${labelPrecio}</div></div>${c.esGranel?`<button onclick="editarGranelCart(${i})" style="background:none;border:none;cursor:pointer;font-size:13px;padding:4px">✏️</button>`:`<div class="qty-ctrl"><button class="qty-btn" onclick="changeQty(${i},-1)">−</button><span class="qty-num">${c.cantidad}</span><button class="qty-btn" onclick="changeQty(${i},1)">+</button></div>`}<div style="font-family:'JetBrains Mono',monospace;font-size:13px;font-weight:700;min-width:60px;text-align:right">$${totalItem.toFixed(2)}</div><button onclick="removeFromCart(${i})" style="background:none;border:none;cursor:pointer;color:var(--danger);font-size:16px">✕</button></div>`;
-  }).join('');
-  const sub=carrito.reduce((s,c)=>s+(c.esGranel?c.precio:c.precio*c.cantidad),0);
-  const desc=parseFloat(document.getElementById('cartDescuento').value)||0;
-  document.getElementById('cartSubtotal').textContent='$'+sub.toFixed(2);
-  document.getElementById('cartTotal').textContent='$'+(sub-desc).toFixed(2);
-  calcularCambio();
-}
-
-function editarGranelCart(i){const item=carrito[i];const prod=productosCache.find(p=>p.id===item.producto_id);if(!prod)return;prod.stock=(parseFloat(prod.stock)+item.cantidad).toFixed(4);carrito.splice(i,1);renderCart();abrirModalGranel(prod.id);}
-function changeQty(i,delta){carrito[i].cantidad+=delta;if(carrito[i].cantidad<=0)carrito.splice(i,1);renderCart();}
-function removeFromCart(i){carrito.splice(i,1);renderCart();}
-function limpiarCarrito(){carrito=[];renderCart();document.getElementById('montoPagado').value='';document.getElementById('cambioDisplay').style.display='none';document.querySelectorAll('.denom-btn').forEach(b=>b.classList.remove('selected'));}
-
-function selectPago(m){
-  metodoPago=m;document.querySelectorAll('.pay-btn').forEach(b=>b.classList.remove('selected'));document.getElementById('pay-'+m).classList.add('selected');
-  document.getElementById('seccionEfectivo').style.display=m==='efectivo'?'block':'none';
-  if(m!=='efectivo'){document.getElementById('montoPagado').value='';document.getElementById('cambioDisplay').style.display='none';}
-}
-
-function setDenom(monto,ev){
-  document.querySelectorAll('.denom-btn').forEach(b=>b.classList.remove('selected'));if(ev)ev.currentTarget.classList.add('selected');
-  if(monto!==null){document.getElementById('montoPagado').value=monto;calcularCambio();}
-  else{document.getElementById('montoPagado').value='';document.getElementById('montoPagado').focus();document.getElementById('cambioDisplay').style.display='none';}
-}
-
-function calcularCambio(){
-  const pagado=parseFloat(document.getElementById('montoPagado').value)||0;
-  const total=parseFloat(document.getElementById('cartTotal').textContent.replace('$',''))||0;
-  const display=document.getElementById('cambioDisplay');
-  if(pagado>0){display.style.display='flex';const cambio=pagado-total;document.getElementById('cambioMonto').textContent='$'+(cambio>=0?cambio:0).toFixed(2);document.getElementById('cambioMonto').style.color=cambio>=0?'var(--accent)':'var(--danger)';}
-  else{display.style.display='none';}
-}
-
-async function cobrar(){
-  if(!carrito.length)return showPosAlert('Carrito vacío','warn');
-  const desc=parseFloat(document.getElementById('cartDescuento').value)||0;
-  const items=carrito.map(c=>({producto_id:c.producto_id,cantidad:c.cantidad,cantidad_venta:c.esGranel?c.cantidadVenta:c.cantidad,unidad_venta:c.esGranel?c.unidadVenta:null,es_granel:c.esGranel||false}));
-  try{const r=await api('POST','/ventas',{items,metodo_pago:metodoPago,descuento:desc});showPosAlert(`✅ Venta ${r.folio} — $${r.total.toFixed(2)}`,'success');limpiarCarrito();await loadProductosPos();loadDashboard();}
-  catch(e){showPosAlert(e.message,'error');}
-}
-
-function showPosAlert(msg,type){const el=document.getElementById('posAlert');el.innerHTML=`<div class="alert alert-${type}">${msg}</div>`;setTimeout(()=>el.innerHTML='',3500);}
-
-function toggleCam(){
-  const cam=document.getElementById('scannerCam');
-  if(camActiva){Quagga.stop();cam.style.display='none';camActiva=false;}
-  else{
-    cam.style.display='block';
-    Quagga.init({inputStream:{type:'LiveStream',target:cam,constraints:{facingMode:'environment'}},decoder:{readers:['ean_reader','code_128_reader','upc_reader']}},err=>{if(err)return;Quagga.start();camActiva=true;});
-    Quagga.onDetected(result=>{const code=result.codeResult.code;document.getElementById('scanInput').value=code;const prod=productosCache.find(p=>p.codigo===code);if(prod){esGranel(prod)?abrirModalGranel(prod.id):addToCart(prod.id);document.getElementById('scanInput').value='';}else showPosAlert('Código no registrado: '+code,'warn');});
-  }
-}
-
-async function loadInventario(){
-  const qs=new URLSearchParams();const b=document.getElementById('invBuscar').value,c=document.getElementById('invCategoria').value,s=document.getElementById('invBajoStock').checked;
-  if(b)qs.set('buscar',b);if(c)qs.set('categoria',c);if(s)qs.set('bajo_stock','1');
-  const prods=await api('GET','/productos?'+qs.toString());productosCache=prods;
-  document.getElementById('invTable').innerHTML=prods.map(p=>{
-    const tipoLabel=esGranel(p)?`<span class="badge badge-purple">${p.tipo_venta==='granel_liquido'?'💧 Líquido':'⚖️ Sólido'}</span>`:`<span class="badge badge-blue">pieza</span>`;
-    const stockLabel=esGranel(p)?`${parseFloat(p.stock).toFixed(3)} ${p.unidad_inventario||p.unidad}`:`${p.stock} ${p.unidad}`;
-    const precioLabel=esGranel(p)?`$${p.precio_venta.toFixed(2)}/${p.unidad_inventario||p.unidad}`:`$${p.precio_venta.toFixed(2)}`;
-    return `<tr><td style="font-family:'JetBrains Mono',monospace">${p.codigo}</td><td style="font-weight:600">${p.nombre}</td><td><span class="badge badge-blue">${p.categoria}</span></td><td style="font-family:'JetBrains Mono',monospace">${precioLabel}</td><td class="${p.stock<=p.stock_minimo?'stock-low':'stock-ok'}" style="font-weight:700">${stockLabel}</td><td>${p.stock_minimo}</td><td>${tipoLabel}</td><td style="display:flex;gap:6px"><button class="btn btn-secondary btn-sm" onclick="editarProducto(${p.id})">✏️</button><button class="btn btn-secondary btn-sm" onclick="abrirStock(${p.id},'${p.nombre.replace(/'/g,"\\'")}')">📦</button>${user.rol==='dueno'?`<button class="btn btn-danger btn-sm" onclick="eliminarProducto(${p.id})">🗑</button>`:''}</td></tr>`;
-  }).join('')||'<tr><td colspan="8" style="text-align:center;color:var(--muted);padding:20px">Sin productos</td></tr>';
-}
-
-function toggleGranelFields(){
-  const tipo=document.getElementById('prodTipoVenta').value,esG=tipo!=='pieza';
-  document.getElementById('campoUnidadNormal').style.display=esG?'none':'block';
-  document.getElementById('camposGranel').style.display=esG?'block':'none';
-  if(tipo==='granel_liquido'){document.getElementById('prodUnidadGranel').innerHTML='<option value="lt">Litros (lt)</option>';document.getElementById('prodUnidadVenta').innerHTML='<option value="ml">Mililitros (ml)</option><option value="lt">Litros (lt)</option>';document.getElementById('labelPrecioVenta').textContent='Precio por litro *';document.getElementById('hintPrecioVenta').textContent='Ej: $50/lt → $0.05/ml';document.getElementById('labelStock').textContent='Stock inicial (litros)';document.getElementById('labelStockMin').textContent='Mínimo (litros)';document.getElementById('granelExplica').textContent='📦 Stock en litros. Cajero escribe ml al vender.';}
-  else if(tipo==='granel_solido'){document.getElementById('prodUnidadGranel').innerHTML='<option value="kg">Kilogramos (kg)</option>';document.getElementById('prodUnidadVenta').innerHTML='<option value="g">Gramos (g)</option><option value="kg">Kilogramos (kg)</option>';document.getElementById('labelPrecioVenta').textContent='Precio por kg *';document.getElementById('hintPrecioVenta').textContent='Ej: $30/kg → $0.03/g';document.getElementById('labelStock').textContent='Stock inicial (kg)';document.getElementById('labelStockMin').textContent='Mínimo (kg)';document.getElementById('granelExplica').textContent='📦 Stock en kg. Cajero escribe gramos al vender.';}
-  else{document.getElementById('labelPrecioVenta').textContent='Precio de venta *';document.getElementById('hintPrecioVenta').textContent='';document.getElementById('labelStock').textContent='Stock inicial';document.getElementById('labelStockMin').textContent='Stock mínimo';}
-}
-
-function nuevoProducto(){['prodId','prodCodigo','prodNombre','prodPrecioCompra','prodPrecioVenta','prodStock'].forEach(id=>document.getElementById(id).value='');document.getElementById('prodCategoria').value='General';document.getElementById('prodTipoVenta').value='pieza';document.getElementById('prodUnidad').value='pza';document.getElementById('prodStockMin').value='5';document.getElementById('modalProdTitle').textContent='Nuevo Producto';toggleGranelFields();openModal('modalProducto');}
-function openModal(id){document.getElementById(id).classList.add('open');}
-function closeModal(id){document.getElementById(id).classList.remove('open');}
-
-function editarProducto(id){
-  const p=productosCache.find(p=>p.id===id)||{};
-  document.getElementById('prodId').value=id;document.getElementById('prodCodigo').value=p.codigo||'';document.getElementById('prodNombre').value=p.nombre||'';document.getElementById('prodCategoria').value=p.categoria||'General';document.getElementById('prodTipoVenta').value=p.tipo_venta||'pieza';document.getElementById('prodUnidad').value=p.unidad||'pza';document.getElementById('prodPrecioCompra').value=p.precio_compra||0;document.getElementById('prodPrecioVenta').value=p.precio_venta||'';document.getElementById('prodStock').value=p.stock||0;document.getElementById('prodStockMin').value=p.stock_minimo||5;
-  toggleGranelFields();if(p.unidad_inventario)document.getElementById('prodUnidadGranel').value=p.unidad_inventario;if(p.unidad_venta)document.getElementById('prodUnidadVenta').value=p.unidad_venta;
-  document.getElementById('modalProdTitle').textContent='Editar Producto';openModal('modalProducto');
-}
-
-async function guardarProducto(){
-  const id=document.getElementById('prodId').value,tipo=document.getElementById('prodTipoVenta').value;
-  const data={codigo:document.getElementById('prodCodigo').value,nombre:document.getElementById('prodNombre').value,categoria:document.getElementById('prodCategoria').value,tipo_venta:tipo,unidad:tipo==='pieza'?document.getElementById('prodUnidad').value:document.getElementById('prodUnidadGranel').value,unidad_inventario:tipo!=='pieza'?document.getElementById('prodUnidadGranel').value:null,unidad_venta:tipo!=='pieza'?document.getElementById('prodUnidadVenta').value:null,precio_compra:parseFloat(document.getElementById('prodPrecioCompra').value)||0,precio_venta:parseFloat(document.getElementById('prodPrecioVenta').value),stock:parseFloat(document.getElementById('prodStock').value)||0,stock_minimo:parseFloat(document.getElementById('prodStockMin').value)||5};
-  try{id?await api('PUT','/productos/'+id,data):await api('POST','/productos',data);closeModal('modalProducto');loadInventario();loadProductosPos();}catch(e){alert(e.message);}
-}
-
-async function eliminarProducto(id){if(!confirm('¿Eliminar este producto?'))return;await api('DELETE','/productos/'+id);loadInventario();loadProductosPos();}
-
-function abrirStock(id,nombre){
-  const prod=productosCache.find(p=>p.id===id);
-  document.getElementById('stockProdId').value=id;document.getElementById('stockProdNombre').textContent=nombre;
-  if(prod&&esGranel(prod)){const u=prod.unidad_inventario||prod.unidad;document.getElementById('stockGranelInfo').innerHTML=`<div class="granel-info">⚖️ Granel — ingresa en <strong>${u}</strong>. Stock: ${parseFloat(prod.stock).toFixed(3)} ${u}</div>`;document.getElementById('stockCantLabel').textContent=`Cantidad (${u})`;document.getElementById('stockCantidad').step='0.001';}
-  else{document.getElementById('stockGranelInfo').innerHTML='';document.getElementById('stockCantLabel').textContent='Cantidad';document.getElementById('stockCantidad').step='1';}
-  document.getElementById('stockCantidad').value='1';openModal('modalStock');
-}
-
-async function guardarStock(){const id=document.getElementById('stockProdId').value,tipo=document.getElementById('stockTipo').value,cantidad=parseFloat(document.getElementById('stockCantidad').value),nota=document.getElementById('stockNota').value;try{await api('PATCH','/productos/'+id+'/stock',{tipo,cantidad,nota});closeModal('modalStock');loadInventario();loadProductosPos();}catch(e){alert(e.message);}}
-
-function resetVentasFiltro(){const hoy=new Date().toISOString().split('T')[0];document.getElementById('ventasDesde').value=hoy;document.getElementById('ventasHasta').value=hoy;}
-
-async function loadVentas(){
-  const desde=document.getElementById('ventasDesde').value,hasta=document.getElementById('ventasHasta').value;
-  const ventas=await api('GET',`/ventas?desde=${desde}T00:00:00&hasta=${hasta}T23:59:59`);
-  document.getElementById('ventasTable').innerHTML=ventas.map(v=>`<tr><td><span class="badge badge-blue">${v.folio}</span></td><td>${fmtFecha(v.creado_en)}</td><td>${v.cajero||'—'}</td><td><span class="badge badge-green">${v.metodo_pago}</span></td><td style="font-weight:700">$${v.total.toFixed(2)}</td><td><button class="btn btn-secondary btn-sm" onclick="verVenta(${v.id})">Ver</button></td></tr>`).join('')||'<tr><td colspan="6" style="text-align:center;color:var(--muted);padding:20px">Sin ventas</td></tr>';
-}
-
-async function verVenta(id){
-  const v=await api('GET','/ventas/'+id);
-  document.getElementById('modalVentaTitle').textContent='Venta '+v.folio;
-  document.getElementById('modalVentaContent').innerHTML=`<div style="margin-bottom:12px;font-size:13px;color:var(--muted)">${fmtFecha(v.creado_en)} · ${v.cajero||'—'} · ${v.metodo_pago}</div><table style="width:100%;font-size:13px"><thead><tr><th>Producto</th><th>Cant.</th><th>Precio</th><th>Subtotal</th></tr></thead><tbody>${v.items.map(i=>`<tr><td>${i.nombre}</td><td>${i.es_granel&&i.cantidad_venta?`${i.cantidad_venta} ${i.unidad_venta||''}`:i.cantidad}</td><td>$${i.precio_unitario.toFixed(i.es_granel?4:2)}</td><td>$${i.subtotal.toFixed(2)}</td></tr>`).join('')}</tbody></table><div style="text-align:right;margin-top:12px">${v.descuento>0?`<div>Descuento: -$${v.descuento.toFixed(2)}</div>`:''}<div style="font-size:18px;font-weight:700;color:var(--accent)">Total: $${v.total.toFixed(2)}</div></div>`;
-  openModal('modalVenta');
-}
-
-async function hacerCorte(){
-  const desde=document.getElementById('corteDesde').value,notas=document.getElementById('corteNotas').value;
-  try{const r=await api('POST','/cortes',{fecha_inicio:desde,notas});const el=document.getElementById('corteResultado');el.style.display='block';el.innerHTML=`<div style="padding:28px"><div style="font-family:'Syne',sans-serif;font-size:18px;font-weight:800;margin-bottom:16px">✅ Corte Generado</div><div style="display:grid;grid-template-columns:1fr 1fr;gap:12px"><div class="stat-card" style="--accent-color:var(--accent)"><div class="stat-label">Total</div><div class="stat-value">$${r.total_ventas.toFixed(2)}</div></div><div class="stat-card"><div class="stat-label">Ventas</div><div class="stat-value">${r.num_ventas}</div></div><div class="stat-card"><div class="stat-label">💵 Efectivo</div><div class="stat-value">$${r.efectivo.toFixed(2)}</div></div><div class="stat-card"><div class="stat-label">💳 Tarjeta</div><div class="stat-value">$${r.tarjeta.toFixed(2)}</div></div></div></div>`;loadCortes();}catch(e){alert(e.message);}
-}
-
-async function loadCortes(){const cortes=await api('GET','/cortes');document.getElementById('cortesTable').innerHTML=cortes.map(c=>`<tr><td>${fmtFecha(c.creado_en)}</td><td>${c.cajero||'—'}</td><td>${c.num_ventas}</td><td>$${c.efectivo.toFixed(2)}</td><td>$${c.tarjeta.toFixed(2)}</td><td style="font-weight:700">$${c.total_ventas.toFixed(2)}</td></tr>`).join('')||'<tr><td colspan="6" style="text-align:center;color:var(--muted)">Sin cortes</td></tr>';}
-
-async function loadUsuarios(){const users=await api('GET','/usuarios');document.getElementById('usuariosTable').innerHTML=users.map(u=>`<tr><td style="font-weight:600">${u.nombre}</td><td>${u.email}</td><td><span class="badge ${u.rol==='corporativo'?'badge-corp':u.rol==='dueno'?'badge-warn':'badge-blue'}">${u.rol}</span></td><td><span class="badge ${u.activo?'badge-green':'badge-red'}">${u.activo?'Activo':'Inactivo'}</span></td><td>${u.rol!=='corporativo'?`<button class="btn btn-sm ${u.activo?'btn-danger':'btn-primary'}" onclick="toggleUsuario(${u.id})">${u.activo?'Desactivar':'Activar'}</button>`:'—'}</td></tr>`).join('');}
-async function guardarUsuario(){try{await api('POST','/usuarios',{nombre:document.getElementById('userNombre').value,email:document.getElementById('userEmail').value,password:document.getElementById('userPassword').value,rol:document.getElementById('userRol').value});closeModal('modalUsuario');loadUsuarios();}catch(e){alert(e.message);}}
-async function toggleUsuario(id){await api('PATCH','/usuarios/'+id+'/toggle');loadUsuarios();}
-function setCajeroHoy(){document.getElementById('cajeroFecha').value=new Date().toISOString().split('T')[0];}
-
-async function loadCajerosActividad(){
-  const fecha=document.getElementById('cajeroFecha').value;
-  try{
-    const r=await api('GET','/cajeros/actividad?fecha='+fecha),d=await api('GET','/dashboard');
-    document.getElementById('alertasActividad').innerHTML=d.alertas_actividad?.length>0?d.alertas_actividad.map(a=>`<div class="alerta-card alerta-${a.tipo}">⚠️ ${a.mensaje}</div>`).join(''):'<div class="alert alert-success">✅ Sin actividad inusual hoy</div>';
-    document.getElementById('cajerosLista').innerHTML=r.cajeros.map(c=>`<div class="cajero-card"><div class="cajero-info"><div class="cajero-nombre">${c.nombre} <span class="badge ${c.activo?'badge-green':'badge-red'}">${c.activo?'Activo':'Bloqueado'}</span></div><div class="cajero-stats"><span>${c.num_ventas} ventas</span><span>💵 $${(c.efectivo||0).toFixed(2)}</span><span>💳 $${(c.tarjeta||0).toFixed(2)}</span><span>📱 $${(c.transferencia||0).toFixed(2)}</span><span>Desc: $${(c.total_descuentos||0).toFixed(2)}</span><span>Última: ${c.ultima_venta?fmtHora(c.ultima_venta):'Sin actividad'}</span></div></div><div class="cajero-total">$${(c.total_vendido||0).toFixed(2)}</div>${c.activo?`<button class="btn btn-danger btn-sm" onclick="toggleCajero(${c.id},'${c.nombre}',true)">🚫 Bloquear</button>`:`<button class="btn btn-primary btn-sm" onclick="toggleCajero(${c.id},'${c.nombre}',false)">✅ Activar</button>`}</div>`).join('')||'<div style="color:var(--muted);font-size:13px">Sin empleados</div>';
-  }catch(e){console.error(e);}
-}
-
-function setExportHoy(){const h=new Date().toISOString().split('T')[0];document.getElementById('exportDesde').value=h;document.getElementById('exportHasta').value=h;}
-function setExportMes(){const n=new Date();document.getElementById('exportDesde').value=new Date(n.getFullYear(),n.getMonth(),1).toISOString().split('T')[0];document.getElementById('exportHasta').value=new Date(n.getFullYear(),n.getMonth()+1,0).toISOString().split('T')[0];}
-function clearExportFechas(){document.getElementById('exportDesde').value='';document.getElementById('exportHasta').value='';}
-
-function exportar(tipo){
-  const desde=document.getElementById('exportDesde').value,hasta=document.getElementById('exportHasta').value;
-  let url=`/api/exportar/${tipo}`;const p=[];if(desde)p.push(`desde=${desde}T00:00:00`);if(hasta)p.push(`hasta=${hasta}T23:59:59`);if(p.length)url+='?'+p.join('&');
-  fetch(url,{headers:{'Authorization':'Bearer '+token}}).then(r=>r.blob()).then(blob=>{const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=`${tipo}_${new Date().toISOString().split('T')[0]}.csv`;a.click();URL.revokeObjectURL(a.href);}).catch(e=>alert('Error: '+e.message));
-}
-
-function descargarBackup(){fetch('/api/backup',{headers:{'Authorization':'Bearer '+token}}).then(r=>r.blob()).then(blob=>{const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=`tienda_backup_${new Date().toISOString().split('T')[0]}.db`;a.click();}).catch(e=>alert('Error: '+e.message));}
-
-
-
-// ===================== OS =====================
-async function loadOSUsuarios() {
-  try {
-    const users = await api('GET', '/os/usuarios');
-    document.getElementById('osUsuariosTable').innerHTML = users.map(u => `
-      <tr>
-        <td style="font-weight:600">${u.nombre}</td>
-        <td>${u.email}</td>
-        <td><span class="badge ${u.rol==='os'?'badge-os':u.rol==='dueno'?'badge-warn':'badge-blue'}">${u.rol.toUpperCase()}</span></td>
-        <td><span class="badge ${u.activo?'badge-green':'badge-red'}">${u.activo?'Activo':'Inactivo'}</span></td>
-        <td>${u.rol!=='os'?`<button class="btn btn-sm ${u.activo?'btn-danger':'btn-primary'}" onclick="toggleOSUsuario(${u.id})">${u.activo?'Desactivar':'Activar'}</button>`:'—'}</td>
-      </tr>`).join('');
-  } catch(e) { console.error(e); }
-}
-
-async function guardarOSUsuario() {
-  try {
-    await api('POST', '/os/usuarios', {
-      nombre: document.getElementById('osUserNombre').value,
-      email: document.getElementById('osUserEmail').value,
-      password: document.getElementById('osUserPassword').value,
-      rol: document.getElementById('osUserRol').value
-    });
-    closeModal('modalOSUsuario');
-    loadOSUsuarios();
-  } catch(e) { alert(e.message); }
-}
-
-async function toggleOSUsuario(id) {
-  await api('PATCH', '/usuarios/' + id + '/toggle');
-  loadOSUsuarios();
-}
-
-
-// ===== CORPORATIVO =====
-async function loadCorpUsuarios() {
-  try {
-    const users = await api('GET', '/corporativo/usuarios');
-    document.getElementById('corpUsuariosTable').innerHTML = users.map(u =>
-      `<tr>
-        <td style="font-weight:600">${u.nombre}</td>
-        <td>${u.email}</td>
-        <td><span class="badge ${u.rol==='dueno'?'badge-warn':u.rol==='corporativo'?'badge-purple':'badge-blue'}">${u.rol}</span></td>
-        <td><span class="badge ${u.activo?'badge-green':'badge-red'}">${u.activo?'Activo':'Inactivo'}</span></td>
-        <td>${u.rol!=='corporativo'?`<button class="btn btn-sm ${u.activo?'btn-danger':'btn-primary'}" onclick="toggleCorpUsuario(${u.id})">${u.activo?'Desactivar':'Activar'}</button>`:'—'}</td>
-      </tr>`
-    ).join('');
-  } catch(e) { console.error(e); }
-}
-
-async function guardarCorpUsuario() {
-  try {
-    await api('POST', '/corporativo/usuarios', {
-      nombre: document.getElementById('corpUserNombre').value,
-      email: document.getElementById('corpUserEmail').value,
-      password: document.getElementById('corpUserPassword').value,
-      rol: document.getElementById('corpUserRol').value
-    });
-    closeModal('modalCorpUsuario');
-    loadCorpUsuarios();
-  } catch(e) { alert(e.message); }
-}
-
-async function toggleCorpUsuario(id) {
-  await api('PATCH', '/corporativo/usuarios/' + id + '/toggle');
-  loadCorpUsuarios();
-}
-
-// ===================== DEUDAS =====================
-async function loadDeudas() {
-  try {
-    const deudas = await api('GET', '/deudas');
-    const totalDinero = deudas.reduce((s, d) => s + (d.monto || 0), 0);
-    const totalEnvases = deudas.reduce((s, d) => s + (d.envases || 0), 0);
-    document.getElementById('deudasResumen').innerHTML = `
-      <div class="stat-card" style="--accent-color:#c2410c;min-width:140px;padding:14px 18px">
-        <div class="stat-label">Deudas activas</div>
-        <div class="stat-value" style="font-size:22px">${deudas.length}</div>
-      </div>
-      <div class="stat-card" style="--accent-color:#b45309;min-width:140px;padding:14px 18px">
-        <div class="stat-label">Total dinero</div>
-        <div class="stat-value" style="font-size:22px">$${totalDinero.toFixed(2)}</div>
-      </div>
-      ${totalEnvases > 0 ? `<div class="stat-card" style="--accent-color:#0369a1;min-width:140px;padding:14px 18px"><div class="stat-label">Envases</div><div class="stat-value" style="font-size:22px">${totalEnvases}</div></div>` : ''}
-    `;
-    if (!deudas.length) {
-      document.getElementById('deudasLista').innerHTML = '<div style="text-align:center;color:var(--muted);padding:40px;font-size:14px">✅ Sin deudas registradas</div>';
-      return;
+    // Calcular total
+    for (const item of items) {
+      const prod = db.prepare('SELECT * FROM productos WHERE id = ?').get(item.producto_id);
+      if (item.es_granel) {
+        // precio_venta está por unidad de inventario; cantidad es fracción de esa unidad
+        total += prod.precio_venta * item.cantidad;
+      } else {
+        total += prod.precio_venta * item.cantidad;
+      }
     }
-    document.getElementById('deudasLista').innerHTML = deudas.map(d => `
-      <div style="background:white;border-radius:14px;border:1px solid var(--border);padding:18px 20px;margin-bottom:12px;display:flex;align-items:flex-start;gap:16px">
-        <div style="width:42px;height:42px;border-radius:50%;background:#ffedd5;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0">👤</div>
-        <div style="flex:1">
-          <div style="font-weight:700;font-size:15px;margin-bottom:4px">${d.nombre}</div>
-          <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:4px">
-            ${d.monto > 0 ? `<span class="badge badge-orange">💵 $${d.monto.toFixed(2)}</span>` : ''}
-            ${d.envases > 0 ? `<span class="badge badge-blue">🧴 ${d.envases} envase${d.envases !== 1 ? 's' : ''}</span>` : ''}
-          </div>
-          ${d.notas ? `<div style="font-size:12px;color:var(--muted);margin-top:4px">${d.notas}</div>` : ''}
-          <div style="font-size:11px;color:var(--muted);margin-top:4px;font-family:'JetBrains Mono',monospace">${fmtFecha(d.creado_en)} · ${d.registrado_por || '—'}</div>
-        </div>
-        <div style="display:flex;gap:8px;flex-shrink:0">
-          <button class="btn btn-secondary btn-sm" onclick="editarDeuda(${d.id})">✏️</button>
-          <button class="btn btn-danger btn-sm" onclick="eliminarDeuda(${d.id},'${d.nombre.replace(/'/g,"\'")}')">✅ Liquidar</button>
-        </div>
-      </div>
-    `).join('');
-  } catch(e) { console.error(e); }
-}
+    total -= (descuento || 0);
 
-function limpiarFormDeuda() {
-  document.getElementById('deudaId').value = '';
-  document.getElementById('deudaNombre').value = '';
-  document.getElementById('deudaMonto').value = '';
-  document.getElementById('deudaEnvases').value = '';
-  document.getElementById('deudaNotas').value = '';
-  document.getElementById('modalDeudaTitle').textContent = 'Nueva Deuda';
-}
+    const venta = db.prepare('INSERT INTO ventas (folio, usuario_id, total, descuento, metodo_pago, notas) VALUES (?, ?, ?, ?, ?, ?)').run(folio, req.user.id, total, descuento || 0, metodo_pago || 'efectivo', notas || '');
 
-async function guardarDeuda() {
-  const id = document.getElementById('deudaId').value;
-  const nombre = document.getElementById('deudaNombre').value.trim();
-  if (!nombre) return alert('El nombre es requerido');
-  const data = {
-    nombre,
-    monto: parseFloat(document.getElementById('deudaMonto').value) || 0,
-    envases: parseInt(document.getElementById('deudaEnvases').value) || 0,
-    notas: document.getElementById('deudaNotas').value.trim()
-  };
-  try {
-    if (id) await api('PUT', '/deudas/' + id, data);
-    else await api('POST', '/deudas', data);
-    closeModal('modalDeuda');
-    limpiarFormDeuda();
-    loadDeudas();
-  } catch(e) { alert(e.message); }
-}
+    for (const item of items) {
+      const prod = db.prepare('SELECT * FROM productos WHERE id = ?').get(item.producto_id);
+      const precio_unitario = item.es_granel
+        ? prod.precio_venta * item.cantidad  // subtotal granel
+        : prod.precio_venta;
+      const subtotal = item.es_granel
+        ? prod.precio_venta * item.cantidad
+        : prod.precio_venta * item.cantidad;
 
-function editarDeuda(id) {
-  const cards = document.getElementById('deudasLista').querySelectorAll('[data-id]');
-  api('GET', '/deudas').then(deudas => {
-    const d = deudas.find(x => x.id === id);
-    if (!d) return;
-    document.getElementById('deudaId').value = d.id;
-    document.getElementById('deudaNombre').value = d.nombre;
-    document.getElementById('deudaMonto').value = d.monto || '';
-    document.getElementById('deudaEnvases').value = d.envases || '';
-    document.getElementById('deudaNotas').value = d.notas || '';
-    document.getElementById('modalDeudaTitle').textContent = 'Editar Deuda';
-    openModal('modalDeuda');
+      // precio_unitario en venta_items: para granel guardamos precio por unidad de venta
+      let precio_unit_display = prod.precio_venta;
+      if (item.es_granel && item.cantidad_venta && item.cantidad_venta > 0) {
+        precio_unit_display = (prod.precio_venta * item.cantidad) / item.cantidad_venta;
+      }
+
+      db.prepare(`INSERT INTO venta_items (venta_id, producto_id, cantidad, cantidad_venta, unidad_venta, es_granel, precio_unitario, subtotal)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?)`).run(
+        venta.lastInsertRowid, item.producto_id,
+        item.cantidad,                          // en unidades de inventario
+        item.cantidad_venta || item.cantidad,   // en unidades de venta (para mostrar)
+        item.unidad_venta || null,
+        item.es_granel ? 1 : 0,
+        precio_unit_display,
+        subtotal
+      );
+
+      db.prepare('UPDATE productos SET stock = stock - ?, actualizado_en = CURRENT_TIMESTAMP WHERE id = ?').run(item.cantidad, item.producto_id);
+      db.prepare('INSERT INTO movimientos (producto_id, tipo, cantidad, stock_anterior, stock_nuevo, nota, usuario_id) VALUES (?, ?, ?, ?, ?, ?, ?)').run(
+        item.producto_id, 'venta', item.cantidad, prod.stock, prod.stock - item.cantidad, `Venta ${folio}`, req.user.id
+      );
+    }
+    return venta.lastInsertRowid;
   });
-}
 
-async function eliminarDeuda(id, nombre) {
-  if (!confirm(`¿Marcar como liquidada la deuda de ${nombre}?`)) return;
-  try { await api('DELETE', '/deudas/' + id); loadDeudas(); }
-  catch(e) { alert(e.message); }
-}
+  try {
+    const id = insertVenta();
+    res.json({ id, folio, total, mensaje: 'Venta registrada' });
+  } catch (e) {
+    res.status(400).json({ error: e.message });
+  }
+});
 
-if(token&&user)initApp();else document.getElementById('loginScreen').style.display='flex';
-document.addEventListener('keydown',e=>{if(e.key==='Escape')document.querySelectorAll('.modal-overlay.open').forEach(m=>m.classList.remove('open'));});
-</script>
-</body>
-</html>
+app.get('/api/ventas', authMiddleware, (req, res) => {
+  const { desde, hasta, usuario_id } = req.query;
+  let query = `SELECT v.*, u.nombre as cajero FROM ventas v LEFT JOIN usuarios u ON v.usuario_id = u.id WHERE 1=1`;
+  const params = [];
+  if (desde) { query += ' AND datetime(v.creado_en) >= datetime(?)'; params.push(desde); }
+  if (hasta) { query += ' AND datetime(v.creado_en) <= datetime(?)'; params.push(hasta); }
+  if (usuario_id) { query += ' AND v.usuario_id = ?'; params.push(usuario_id); }
+  query += ' ORDER BY v.creado_en DESC LIMIT 200';
+  res.json(db.prepare(query).all(...params));
+});
+
+app.get('/api/ventas/:id', authMiddleware, (req, res) => {
+  const venta = db.prepare('SELECT v.*, u.nombre as cajero FROM ventas v LEFT JOIN usuarios u ON v.usuario_id = u.id WHERE v.id = ?').get(req.params.id);
+  if (!venta) return res.status(404).json({ error: 'Venta no encontrada' });
+  const items = db.prepare('SELECT vi.*, p.nombre, p.codigo FROM venta_items vi LEFT JOIN productos p ON vi.producto_id = p.id WHERE vi.venta_id = ?').all(req.params.id);
+  res.json({ ...venta, items });
+});
+
+// ===== CORTE =====
+app.post('/api/cortes', authMiddleware, (req, res) => {
+  const { fecha_inicio, notas } = req.body;
+  const desde = fecha_inicio || new Date().toISOString().split('T')[0] + 'T00:00:00.000Z';
+  const ventas = db.prepare("SELECT * FROM ventas WHERE datetime(creado_en, '+6 hours') >= datetime(?) AND datetime(creado_en, '+6 hours') <= datetime(CURRENT_TIMESTAMP, '+6 hours')").all(desde);
+  const total = ventas.reduce((s, v) => s + v.total, 0);
+  const efectivo = ventas.filter(v => v.metodo_pago === 'efectivo').reduce((s, v) => s + v.total, 0);
+  const tarjeta = ventas.filter(v => v.metodo_pago === 'tarjeta').reduce((s, v) => s + v.total, 0);
+  const transferencia = ventas.filter(v => v.metodo_pago === 'transferencia').reduce((s, v) => s + v.total, 0);
+  const r = db.prepare('INSERT INTO cortes (usuario_id, fecha_inicio, total_ventas, num_ventas, efectivo, tarjeta, transferencia, notas) VALUES (?, ?, ?, ?, ?, ?, ?, ?)').run(req.user.id, desde, total, ventas.length, efectivo, tarjeta, transferencia, notas || '');
+  res.json({ id: r.lastInsertRowid, total_ventas: total, num_ventas: ventas.length, efectivo, tarjeta, transferencia });
+});
+
+app.get('/api/cortes', authMiddleware, (req, res) => {
+  res.json(db.prepare('SELECT c.*, u.nombre as cajero FROM cortes c LEFT JOIN usuarios u ON c.usuario_id = u.id ORDER BY c.creado_en DESC LIMIT 50').all());
+});
+
+// ===== DASHBOARD =====
+app.get('/api/dashboard', authMiddleware, (req, res) => {
+  const now = new Date(); const hoy = new Date(now.getTime() - 6*60*60*1000).toISOString().split('T')[0];
+  const ventas_hoy = db.prepare(`SELECT COUNT(*) as num, COALESCE(SUM(total),0) as total FROM ventas WHERE date(creado_en, '+6 hours') = ?`).get(hoy);
+  const productos_total = db.prepare('SELECT COUNT(*) as num FROM productos WHERE activo = 1').get();
+  const bajo_stock = db.prepare('SELECT COUNT(*) as num FROM productos WHERE activo = 1 AND stock <= stock_minimo').get();
+  const ultimas_ventas = db.prepare('SELECT v.folio, v.total, v.metodo_pago, v.creado_en, u.nombre as cajero FROM ventas v LEFT JOIN usuarios u ON v.usuario_id = u.id ORDER BY v.creado_en DESC LIMIT 5').all();
+  const alertas = db.prepare('SELECT nombre, codigo, stock, stock_minimo FROM productos WHERE activo = 1 AND stock <= stock_minimo ORDER BY stock ASC LIMIT 10').all();
+  const actividad_cajeros = db.prepare(`
+    SELECT u.id, u.nombre, u.activo,
+      COUNT(v.id) as num_ventas,
+      COALESCE(SUM(v.total), 0) as total_vendido,
+      MAX(v.creado_en) as ultima_venta
+    FROM usuarios u
+    LEFT JOIN ventas v ON v.usuario_id = u.id AND date(v.creado_en, '+6 hours') = ?
+    WHERE u.rol != 'dueno'
+    GROUP BY u.id ORDER BY total_vendido DESC
+  `).all(hoy);
+  const alertas_actividad = [];
+  const fuera = db.prepare(`SELECT COUNT(*) as num FROM ventas WHERE date(creado_en, '+6 hours') = ? AND (CAST(strftime('%H', creado_en, '+6 hours') AS INTEGER) < 7 OR CAST(strftime('%H', creado_en, '+6 hours') AS INTEGER) >= 22)`).get(hoy);
+  if (fuera.num > 0) alertas_actividad.push({ tipo: 'warning', mensaje: `${fuera.num} venta(s) fuera de horario normal` });
+  const desc = db.prepare(`SELECT u.nombre, COUNT(v.id) as num_descuentos FROM ventas v LEFT JOIN usuarios u ON v.usuario_id = u.id WHERE date(v.creado_en, '+6 hours') = ? AND v.descuento > 0 GROUP BY v.usuario_id HAVING num_descuentos >= 3`).all(hoy);
+  desc.forEach(d => alertas_actividad.push({ tipo: 'danger', mensaje: `${d.nombre} aplicó descuentos en ${d.num_descuentos} ventas hoy` }));
+  // deudas pendientes para el dashboard
+  const deudas_count = db.prepare('SELECT COUNT(*) as num FROM deudas').get();
+  res.json({ ventas_hoy, productos_total, bajo_stock, ultimas_ventas, alertas, actividad_cajeros, alertas_actividad, deudas_pendientes: deudas_count.num });
+});
+
+// ===== MONITOREO =====
+app.get('/api/cajeros/actividad', authMiddleware, solodueno, (req, res) => {
+  const dia = req.query.fecha || new Date().toISOString().split('T')[0];
+  const actividad = db.prepare(`
+    SELECT u.id, u.nombre, u.email, u.rol, u.activo,
+      COUNT(v.id) as num_ventas,
+      COALESCE(SUM(v.total), 0) as total_vendido,
+      COALESCE(SUM(CASE WHEN v.metodo_pago = 'efectivo' THEN v.total ELSE 0 END), 0) as efectivo,
+      COALESCE(SUM(CASE WHEN v.metodo_pago = 'tarjeta' THEN v.total ELSE 0 END), 0) as tarjeta,
+      COALESCE(SUM(CASE WHEN v.metodo_pago = 'transferencia' THEN v.total ELSE 0 END), 0) as transferencia,
+      COALESCE(SUM(v.descuento), 0) as total_descuentos,
+      MAX(v.creado_en) as ultima_venta
+    FROM usuarios u
+    LEFT JOIN ventas v ON v.usuario_id = u.id AND date(v.creado_en, '+6 hours') = ?
+    WHERE u.rol != 'dueno'
+    GROUP BY u.id ORDER BY total_vendido DESC
+  `).all(dia);
+  res.json({ fecha: dia, cajeros: actividad });
+});
+
+
+// ===== ENDPOINTS EXCLUSIVOS OS =====
+app.get('/api/os/usuarios', authMiddleware, soloOS, (req, res) => {
+  res.json(db.prepare('SELECT id, nombre, email, rol, activo, creado_en FROM usuarios ORDER BY rol, nombre').all());
+});
+
+app.post('/api/os/usuarios', authMiddleware, soloOS, (req, res) => {
+  const { nombre, email, password, rol } = req.body;
+  const hash = bcrypt.hashSync(password, 10);
+  try {
+    const r = db.prepare('INSERT INTO usuarios (nombre, email, password, rol) VALUES (?, ?, ?, ?)').run(nombre, email, hash, rol || 'dueno');
+    res.json({ id: r.lastInsertRowid, mensaje: 'Usuario creado' });
+  } catch { res.status(400).json({ error: 'Email ya existe' }); }
+});
+
+
+// ===== ENDPOINTS CORPORATIVO =====
+app.get('/api/corporativo/usuarios', authMiddleware, soloCorporativo, (req, res) => {
+  res.json(db.prepare('SELECT id, nombre, email, rol, activo, creado_en FROM usuarios ORDER BY rol, nombre').all());
+});
+
+app.post('/api/corporativo/usuarios', authMiddleware, soloCorporativo, (req, res) => {
+  const { nombre, email, password, rol } = req.body;
+  if (!['dueno', 'admin', 'cajero'].includes(rol)) return res.status(400).json({ error: 'Rol inválido' });
+  const hash = bcrypt.hashSync(password, 10);
+  try {
+    const r = db.prepare('INSERT INTO usuarios (nombre, email, password, rol) VALUES (?, ?, ?, ?)').run(nombre, email, hash, rol);
+    res.json({ id: r.lastInsertRowid, mensaje: 'Usuario creado' });
+  } catch { res.status(400).json({ error: 'Email ya existe' }); }
+});
+
+app.patch('/api/corporativo/usuarios/:id/toggle', authMiddleware, soloCorporativo, (req, res) => {
+  const user = db.prepare('SELECT * FROM usuarios WHERE id = ?').get(req.params.id);
+  if (!user) return res.status(404).json({ error: 'Usuario no encontrado' });
+  if (user.rol === 'corporativo') return res.status(400).json({ error: 'No puedes desactivarte a ti mismo' });
+  db.prepare('UPDATE usuarios SET activo = ? WHERE id = ?').run(user.activo ? 0 : 1, req.params.id);
+  res.json({ mensaje: `Usuario ${user.activo ? 'desactivado' : 'activado'}` });
+});
+
+// ===== DEUDAS =====
+app.get('/api/deudas', authMiddleware, (req, res) => {
+  const deudas = db.prepare('SELECT d.*, u.nombre as registrado_por FROM deudas d LEFT JOIN usuarios u ON d.usuario_id = u.id ORDER BY d.creado_en DESC').all();
+  res.json(deudas);
+});
+
+app.post('/api/deudas', authMiddleware, (req, res) => {
+  const { nombre, monto, envases, notas } = req.body;
+  if (!nombre) return res.status(400).json({ error: 'El nombre es requerido' });
+  const r = db.prepare('INSERT INTO deudas (nombre, monto, envases, notas, usuario_id) VALUES (?, ?, ?, ?, ?)').run(nombre, monto || 0, envases || 0, notas || '', req.user.id);
+  res.json({ id: r.lastInsertRowid, mensaje: 'Deuda registrada' });
+});
+
+app.put('/api/deudas/:id', authMiddleware, (req, res) => {
+  const { nombre, monto, envases, notas } = req.body;
+  const deuda = db.prepare('SELECT * FROM deudas WHERE id = ?').get(req.params.id);
+  if (!deuda) return res.status(404).json({ error: 'Deuda no encontrada' });
+  db.prepare('UPDATE deudas SET nombre=?, monto=?, envases=?, notas=? WHERE id=?').run(nombre, monto || 0, envases || 0, notas || '', req.params.id);
+  res.json({ mensaje: 'Deuda actualizada' });
+});
+
+app.delete('/api/deudas/:id', authMiddleware, (req, res) => {
+  const deuda = db.prepare('SELECT * FROM deudas WHERE id = ?').get(req.params.id);
+  if (!deuda) return res.status(404).json({ error: 'Deuda no encontrada' });
+  db.prepare('DELETE FROM deudas WHERE id = ?').run(req.params.id);
+  res.json({ mensaje: 'Deuda eliminada' });
+});
+
+// ===== EXPORTAR =====
+app.get('/api/exportar/ventas', authMiddleware, solodueno, (req, res) => {
+  const { desde, hasta } = req.query;
+  let query = `SELECT v.folio, v.creado_en as fecha, u.nombre as cajero, v.metodo_pago, v.descuento, v.total, v.notas FROM ventas v LEFT JOIN usuarios u ON v.usuario_id = u.id WHERE 1=1`;
+  const params = [];
+  if (desde) { query += " AND datetime(v.creado_en, '+6 hours') >= datetime(?)"; params.push(desde); }
+  if (hasta) { query += " AND datetime(v.creado_en, '+6 hours') <= datetime(?)"; params.push(hasta); }
+  query += ' ORDER BY v.creado_en DESC';
+  const ventas = db.prepare(query).all(...params);
+  let csv = 'Folio,Fecha,Cajero,Método de Pago,Descuento,Total,Notas\n';
+  ventas.forEach(v => { csv += `"${v.folio}","${v.fecha}","${v.cajero||''}","${v.metodo_pago}","${v.descuento}","${v.total}","${v.notas||''}"\n`; });
+  res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+  res.setHeader('Content-Disposition', `attachment; filename="ventas_${new Date().toISOString().split('T')[0]}.csv"`);
+  res.send('\uFEFF' + csv);
+});
+
+app.get('/api/exportar/detalle-ventas', authMiddleware, solodueno, (req, res) => {
+  const { desde, hasta } = req.query;
+  let query = `SELECT v.folio, v.creado_en as fecha, u.nombre as cajero, p.codigo, p.nombre as producto, vi.cantidad, vi.cantidad_venta, vi.unidad_venta, vi.es_granel, vi.precio_unitario, vi.subtotal
+    FROM venta_items vi LEFT JOIN ventas v ON vi.venta_id = v.id LEFT JOIN productos p ON vi.producto_id = p.id LEFT JOIN usuarios u ON v.usuario_id = u.id WHERE 1=1`;
+  const params = [];
+  if (desde) { query += " AND datetime(v.creado_en, '+6 hours') >= datetime(?)"; params.push(desde); }
+  if (hasta) { query += " AND datetime(v.creado_en, '+6 hours') <= datetime(?)"; params.push(hasta); }
+  query += ' ORDER BY v.creado_en DESC';
+  const items = db.prepare(query).all(...params);
+  let csv = 'Folio,Fecha,Cajero,Código,Producto,Cantidad (inv),Cantidad (venta),Unidad Venta,Precio Unitario,Subtotal\n';
+  items.forEach(i => { csv += `"${i.folio}","${i.fecha}","${i.cajero||''}","${i.codigo||''}","${i.producto||''}","${i.cantidad}","${i.cantidad_venta||i.cantidad}","${i.unidad_venta||''}","${i.precio_unitario}","${i.subtotal}"\n`; });
+  res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+  res.setHeader('Content-Disposition', `attachment; filename="detalle_ventas_${new Date().toISOString().split('T')[0]}.csv"`);
+  res.send('\uFEFF' + csv);
+});
+
+app.get('/api/exportar/inventario', authMiddleware, solodueno, (req, res) => {
+  const productos = db.prepare('SELECT codigo, nombre, categoria, precio_compra, precio_venta, stock, stock_minimo, unidad, tipo_venta, unidad_inventario, unidad_venta FROM productos WHERE activo = 1 ORDER BY nombre').all();
+  let csv = 'Código,Nombre,Categoría,Precio Compra,Precio Venta,Stock Actual,Stock Mínimo,Unidad,Tipo Venta,Unidad Inventario,Unidad Venta\n';
+  productos.forEach(p => { csv += `"${p.codigo}","${p.nombre}","${p.categoria}","${p.precio_compra}","${p.precio_venta}","${p.stock}","${p.stock_minimo}","${p.unidad}","${p.tipo_venta||'pieza'}","${p.unidad_inventario||''}","${p.unidad_venta||''}"\n`; });
+  res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+  res.setHeader('Content-Disposition', `attachment; filename="inventario_${new Date().toISOString().split('T')[0]}.csv"`);
+  res.send('\uFEFF' + csv);
+});
+
+app.get('/api/exportar/cortes', authMiddleware, solodueno, (req, res) => {
+  const cortes = db.prepare(`SELECT c.creado_en as fecha, u.nombre as cajero, c.num_ventas, c.efectivo, c.tarjeta, c.transferencia, c.total_ventas, c.notas FROM cortes c LEFT JOIN usuarios u ON c.usuario_id = u.id ORDER BY c.creado_en DESC`).all();
+  let csv = 'Fecha,Cajero,Num Ventas,Efectivo,Tarjeta,Transferencia,Total,Notas\n';
+  cortes.forEach(c => { csv += `"${c.fecha}","${c.cajero||''}","${c.num_ventas}","${c.efectivo}","${c.tarjeta}","${c.transferencia}","${c.total_ventas}","${c.notas||''}"\n`; });
+  res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+  res.setHeader('Content-Disposition', `attachment; filename="cortes_${new Date().toISOString().split('T')[0]}.csv"`);
+  res.send('\uFEFF' + csv);
+});
+
+// ===== BACKUP =====
+app.get('/api/backup', authMiddleware, solodueno, (req, res) => {
+  try {
+    if (!fs.existsSync(DB_PATH)) return res.status(404).json({ error: 'Base de datos no encontrada' });
+    res.setHeader('Content-Type', 'application/octet-stream');
+    res.setHeader('Content-Disposition', `attachment; filename="tienda_backup_${new Date().toISOString().split('T')[0]}.db"`);
+    res.send(fs.readFileSync(DB_PATH));
+  } catch(e) { res.status(500).json({ error: 'Error al generar backup: ' + e.message }); }
+});
+
+// Servir index.html para cualquier ruta no API
+app.get('*', (req, res) => {
+  res.sendFile(path.join(__dirname, 'index.html'));
+});
+
+app.listen(PORT, () => console.log(`✅ Servidor corriendo en puerto ${PORT}`));
