@@ -566,32 +566,24 @@ try{user=JSON.parse(localStorage.getItem('user')||'null');}catch(e){user=null;}
 // Helper para fechas con timezone México
 function fmtFecha(str) {
   if (!str) return '—';
+  // Fecha en UTC del servidor, restar 6 horas para México Centro (CST)
   const s = str.replace(' ', 'T') + 'Z';
-  const d = new Date(s);
-  // Obtener componentes en zona horaria México
-  const opts = { timeZone: 'America/Mexico_City' };
-  const mx = new Date(d.toLocaleString('en-US', opts));
+  const d = new Date(new Date(s).getTime() - 6 * 60 * 60 * 1000);
   const pad = n => String(n).padStart(2,'0');
-  const yyyy = mx.getFullYear();
-  const mm = pad(mx.getMonth()+1);
-  const dd = pad(mx.getDate());
-  const hh = pad(mx.getHours());
-  const min = pad(mx.getMinutes());
-  const ss = pad(mx.getSeconds());
-  const ampm = mx.getHours() >= 12 ? 'p.m.' : 'a.m.';
-  const h12 = mx.getHours() % 12 || 12;
-  return `${dd}/${mm}/${yyyy}, ${pad(h12)}:${min}:${ss} ${ampm}`;
+  const h = d.getUTCHours();
+  const ampm = h >= 12 ? 'p.m.' : 'a.m.';
+  const h12 = (h % 12) || 12;
+  return `${pad(d.getUTCDate())}/${pad(d.getUTCMonth()+1)}/${d.getUTCFullYear()}, ${pad(h12)}:${pad(d.getUTCMinutes())}:${pad(d.getUTCSeconds())} ${ampm}`;
 }
 function fmtHora(str) {
   if (!str) return 'Sin actividad';
   const s = str.replace(' ', 'T') + 'Z';
-  const d = new Date(s);
-  const opts = { timeZone: 'America/Mexico_City' };
-  const mx = new Date(d.toLocaleString('en-US', opts));
+  const d = new Date(new Date(s).getTime() - 6 * 60 * 60 * 1000);
   const pad = n => String(n).padStart(2,'0');
-  const ampm = mx.getHours() >= 12 ? 'p.m.' : 'a.m.';
-  const h12 = mx.getHours() % 12 || 12;
-  return `${pad(h12)}:${pad(mx.getMinutes())} ${ampm}`;
+  const h = d.getUTCHours();
+  const ampm = h >= 12 ? 'p.m.' : 'a.m.';
+  const h12 = (h % 12) || 12;
+  return `${pad(h12)}:${pad(d.getUTCMinutes())} ${ampm}`;
 }
 
 function esGranel(p){return p&&(p.tipo_venta==='granel_liquido'||p.tipo_venta==='granel_solido');}
