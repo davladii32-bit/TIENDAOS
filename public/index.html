@@ -566,16 +566,15 @@ try{user=JSON.parse(localStorage.getItem('user')||'null');}catch(e){user=null;}
 // Helper para fechas con timezone México
 function fmtFecha(str) {
   if (!str) return '—';
-  // La fecha ya está en hora local (México), solo formatear sin convertir
-  const s = str.replace(' ', 'T');
-  const d = new Date(s);
-  return d.toLocaleString('es-MX');
+  // Fecha guardada en UTC sin Z, agregar Z para que JS la interprete como UTC
+  // luego mostrar en zona horaria del navegador automaticamente
+  const s = str.replace(' ', 'T') + 'Z';
+  return new Date(s).toLocaleString('es-MX');
 }
 function fmtHora(str) {
   if (!str) return 'Sin actividad';
-  const s = str.replace(' ', 'T');
-  const d = new Date(s);
-  return d.toLocaleTimeString('es-MX');
+  const s = str.replace(' ', 'T') + 'Z';
+  return new Date(s).toLocaleTimeString('es-MX');
 }
 
 function esGranel(p){return p&&(p.tipo_venta==='granel_liquido'||p.tipo_venta==='granel_solido');}
