@@ -61,6 +61,8 @@ tr:last-child td{border-bottom:none;}tr:hover td{background:#fafaf8;}
 .badge-warn{background:#fff3cd;color:#f4a261;}.badge-blue{background:#dce9ff;color:#2b5fad;}
 .badge-purple{background:#ede9fe;color:#6d28d9;}
 .badge-orange{background:#ffedd5;color:#c2410c;}
+.badge-corp{background:#1a2e1f;color:#c8d8cb;}
+.badge-os{background:#0f172a;color:#38bdf8;}
 .search-row{display:flex;gap:12px;margin-bottom:20px;align-items:center;flex-wrap:wrap;}
 .search-input{flex:1;padding:10px 14px;border:2px solid var(--border);border-radius:10px;font-family:'Nunito',sans-serif;font-size:14px;outline:none;min-width:150px;}
 .search-input:focus{border-color:var(--accent);}
@@ -162,7 +164,7 @@ tr:last-child td{border-bottom:none;}tr:hover td{background:#fafaf8;}
 
 <div id="loginScreen">
   <div class="login-box">
-    <div class="login-logo">Tienda<span>OS</span></div>
+    <div class="login-logo">Abarrotes <span>Iker</span></div>
     <div class="login-sub">Sistema de gestión de inventario</div>
     <div id="loginAlert"></div>
     <div class="form-group"><label>Correo electrónico</label><input type="email" id="loginEmail" placeholder="correo@tienda.com" value="dueno@tienda.com"></div>
@@ -174,7 +176,7 @@ tr:last-child td{border-bottom:none;}tr:hover td{background:#fafaf8;}
 <div id="app">
   <div class="layout">
     <nav class="sidebar" id="sidebar">
-      <div class="sidebar-logo">Tienda<span>OS</span></div>
+      <div class="sidebar-logo">Abarrotes <span>Iker</span></div>
       <div class="sidebar-section">Principal</div>
       <div class="nav-item active" onclick="showPage('dashboard',this)"><span class="icon">📊</span><span>Dashboard</span></div>
       <div class="nav-item" onclick="showPage('pos',this)"><span class="icon">🛒</span><span>Punto de Venta</span></div>
@@ -184,10 +186,14 @@ tr:last-child td{border-bottom:none;}tr:hover td{background:#fafaf8;}
       <div class="nav-item" onclick="showPage('corte',this)"><span class="icon">🧾</span><span>Corte de Caja</span></div>
       <div class="sidebar-section">Tienda</div>
       <div class="nav-item" onclick="showPage('deudas',this)"><span class="icon">📋</span><span>Deudas</span></div>
+      <div class="sidebar-section" id="sectionCorp" style="display:none">Corporativo</div>
+      <div class="nav-item" id="navCorp" style="display:none" onclick="showPage('corporativo',this)"><span class="icon">🏢</span><span>Gestión Usuarios</span></div>
       <div class="sidebar-section" id="sectionAdmin" style="display:none">Admin</div>
       <div class="nav-item" id="navUsuarios" style="display:none" onclick="showPage('usuarios',this)"><span class="icon">👥</span><span>Usuarios</span></div>
       <div class="nav-item" id="navCajeros" style="display:none" onclick="showPage('cajeros',this)"><span class="icon">🔍</span><span>Monitoreo</span></div>
       <div class="nav-item" id="navExportar" style="display:none" onclick="showPage('exportar',this)"><span class="icon">📥</span><span>Exportar</span></div>
+      <div class="sidebar-section" id="sectionOS" style="display:none">Sistema OS</div>
+      <div class="nav-item" id="navOS" style="display:none" onclick="showPage('os',this)"><span class="icon">⚙️</span><span>Gestión OS</span></div>
       <div class="sidebar-user">
         <div class="name" id="sidebarName">—</div>
         <div class="role" id="sidebarRole">—</div>
@@ -350,6 +356,20 @@ tr:last-child td{border-bottom:none;}tr:hover td{background:#fafaf8;}
         </div>
       </div>
 
+
+      <!-- CORPORATIVO -->
+      <div class="page" id="page-corporativo">
+        <div class="page-title">🏢 Gestión de Usuarios</div>
+        <div class="page-sub">Crear y administrar dueños y administradores</div>
+        <div style="margin-bottom:16px">
+          <button class="btn btn-primary" onclick="openModal('modalCorpUsuario')">+ Nuevo Usuario</button>
+        </div>
+        <div class="table-card">
+          <table><thead><tr><th>Nombre</th><th>Email</th><th>Rol</th><th>Estado</th><th>Acción</th></tr></thead>
+          <tbody id="corpUsuariosTable"></tbody></table>
+        </div>
+      </div>
+
       <!-- DEUDAS -->
       <div class="page" id="page-deudas">
         <div class="page-title">Deudas y Fiados</div>
@@ -359,6 +379,16 @@ tr:last-child td{border-bottom:none;}tr:hover td{background:#fafaf8;}
           <button class="btn btn-primary" onclick="openModal('modalDeuda')">+ Nueva Deuda</button>
         </div>
         <div id="deudasLista"></div>
+      </div>
+
+      <!-- OS -->
+      <div class="page" id="page-os">
+        <div class="page-title">Gestión OS</div>
+        <div class="page-sub">Control total del sistema — rol exclusivo</div>
+        <div style="margin-bottom:16px"><button class="btn btn-primary" onclick="openModal('modalOSUsuario')">+ Nuevo Usuario</button></div>
+        <div class="table-card">
+          <table><thead><tr><th>Nombre</th><th>Email</th><th>Rol</th><th>Estado</th><th>Acción</th></tr></thead><tbody id="osUsuariosTable"></tbody></table>
+        </div>
       </div>
     </main>
   </div>
@@ -433,10 +463,54 @@ tr:last-child td{border-bottom:none;}tr:hover td{background:#fafaf8;}
     <div class="form-group"><label>Nombre completo</label><input id="userNombre" placeholder="Nombre del empleado"></div>
     <div class="form-group"><label>Correo electrónico</label><input type="email" id="userEmail" placeholder="correo@tienda.com"></div>
     <div class="form-group"><label>Contraseña</label><input type="password" id="userPassword" placeholder="Mínimo 6 caracteres"></div>
-    <div class="form-group"><label>Rol</label><select id="userRol"><option value="admin">Administrador</option><option value="cajero">Cajero</option></select></div>
+    <div class="form-group"><label>Rol</label><select id="userRol"><option value="dueno">Dueño de Tienda</option><option value="admin">Administrador</option><option value="cajero">Cajero</option></select></div>
     <div class="modal-footer">
       <button class="btn btn-secondary" onclick="closeModal('modalUsuario')">Cancelar</button>
       <button class="btn btn-primary" onclick="guardarUsuario()">Crear Usuario</button>
+    </div>
+  </div>
+</div>
+
+
+<!-- Modal OS Usuario -->
+<div class="modal-overlay" id="modalOSUsuario">
+  <div class="modal" style="max-width:420px">
+    <h2>Nuevo Usuario</h2>
+    <div class="form-group"><label>Nombre completo</label><input id="osUserNombre" placeholder="Nombre"></div>
+    <div class="form-group"><label>Correo electrónico</label><input type="email" id="osUserEmail" placeholder="correo@tienda.com"></div>
+    <div class="form-group"><label>Contraseña</label><input type="password" id="osUserPassword" placeholder="Mínimo 6 caracteres"></div>
+    <div class="form-group"><label>Rol</label>
+      <select id="osUserRol">
+        <option value="dueno">Dueño de tienda</option>
+        <option value="admin">Administrador</option>
+        <option value="cajero">Cajero</option>
+      </select>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeModal('modalOSUsuario')">Cancelar</button>
+      <button class="btn btn-primary" onclick="guardarOSUsuario()">Crear</button>
+    </div>
+  </div>
+</div>
+
+
+<!-- Modal Corporativo Usuario -->
+<div class="modal-overlay" id="modalCorpUsuario">
+  <div class="modal" style="max-width:420px">
+    <h2>Nuevo Usuario</h2>
+    <div class="form-group"><label>Nombre completo</label><input id="corpUserNombre" placeholder="Nombre"></div>
+    <div class="form-group"><label>Correo electrónico</label><input type="email" id="corpUserEmail" placeholder="correo@tienda.com"></div>
+    <div class="form-group"><label>Contraseña</label><input type="password" id="corpUserPassword" placeholder="Mínimo 6 caracteres"></div>
+    <div class="form-group"><label>Rol</label>
+      <select id="corpUserRol">
+        <option value="dueno">Dueño de tienda</option>
+        <option value="admin">Administrador</option>
+        <option value="cajero">Cajero</option>
+      </select>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeModal('modalCorpUsuario')">Cancelar</button>
+      <button class="btn btn-primary" onclick="guardarCorpUsuario()">Crear</button>
     </div>
   </div>
 </div>
@@ -488,6 +562,21 @@ const API='';
 let token=localStorage.getItem('token'),user=null,carrito=[],metodoPago='efectivo',camActiva=false,productosCache=[],granelProdActual=null;
 try{user=JSON.parse(localStorage.getItem('user')||'null');}catch(e){user=null;}
 
+
+// Helper para fechas con timezone México
+function fmtFecha(str) {
+  if (!str) return '—';
+  // Fecha guardada en UTC sin Z, agregar Z para que JS la interprete como UTC
+  // luego mostrar en zona horaria del navegador automaticamente
+  const s = str.replace(' ', 'T') + 'Z';
+  return new Date(s).toLocaleString('es-MX');
+}
+function fmtHora(str) {
+  if (!str) return 'Sin actividad';
+  const s = str.replace(' ', 'T') + 'Z';
+  return new Date(s).toLocaleTimeString('es-MX');
+}
+
 function esGranel(p){return p&&(p.tipo_venta==='granel_liquido'||p.tipo_venta==='granel_solido');}
 function factorGranel(inv,venta){if(inv==='lt'&&venta==='ml')return 1000;if(inv==='kg'&&venta==='g')return 1000;return 1;}
 function precioPorUnidadVenta(p){if(!esGranel(p))return p.precio_venta;return p.precio_venta/factorGranel(p.unidad_inventario||p.unidad,p.unidad_venta||'ml');}
@@ -512,9 +601,12 @@ function initApp(){
   if(!token||!user)return;
   document.getElementById('loginScreen').style.display='none';document.getElementById('app').style.display='block';
   document.getElementById('sidebarName').textContent=user.nombre;document.getElementById('sidebarRole').textContent=user.rol.toUpperCase();
-  if(user.rol==='dueno'){['sectionAdmin','navUsuarios','navCajeros','navExportar','dashCajerosSection'].forEach(id=>{const el=document.getElementById(id);if(el)el.style.display=id==='sectionAdmin'?'block':'flex';});document.getElementById('dashCajerosSection').style.display='block';}
+  if(user.rol==='dueno'||user.rol==='os'){['sectionAdmin','navUsuarios','navCajeros','navExportar','dashCajerosSection'].forEach(id=>{const el=document.getElementById(id);if(el)el.style.display=id==='sectionAdmin'?'block':'flex';});document.getElementById('dashCajerosSection').style.display='block';}
+  if(user.rol==='os'){document.getElementById('navOS').style.display='flex';document.getElementById('sectionOS').style.display='block';}
   document.getElementById('dashFecha').textContent=new Date().toLocaleDateString('es-MX',{weekday:'long',year:'numeric',month:'long',day:'numeric'});
-  document.getElementById('corteDesde').value=new Date().toISOString().split('T')[0]+'T00:00';
+  const ahoraLocal=new Date();
+  const hoyLocal=new Date(ahoraLocal.getTime()-ahoraLocal.getTimezoneOffset()*60000).toISOString().split('T')[0];
+  document.getElementById('corteDesde').value=hoyLocal+'T00:00';
   loadDashboard();loadProductosPos();
 }
 
@@ -532,6 +624,8 @@ function showPage(page,el){
   if(page==='cajeros'){setCajeroHoy();loadCajerosActividad();}
   if(page==='exportar')setExportHoy();
   if(page==='deudas')loadDeudas();
+  if(page==='corporativo')loadCorpUsuarios();
+  if(page==='os')loadOSUsuarios();
 }
 
 async function loadDashboard(){
@@ -545,7 +639,7 @@ async function loadDashboard(){
     document.getElementById('dashAlertas').innerHTML=d.alertas.map(p=>`<tr><td>${p.nombre}</td><td class="stock-low">${p.stock}</td><td>${p.stock_minimo}</td></tr>`).join('')||'<tr><td colspan="3" style="color:var(--success);text-align:center">✅ Todo en orden</td></tr>';
     if(d.alertas_actividad?.length>0)document.getElementById('dashAlertasActividad').innerHTML=d.alertas_actividad.map(a=>`<div class="alerta-card alerta-${a.tipo}">⚠️ ${a.mensaje}</div>`).join('');
     if(user?.rol==='dueno'&&d.actividad_cajeros){
-      document.getElementById('dashCajeros').innerHTML=d.actividad_cajeros.map(c=>`<div class="cajero-card"><div class="cajero-info"><div class="cajero-nombre">${c.nombre} <span class="badge ${c.activo?'badge-green':'badge-red'}">${c.activo?'Activo':'Bloqueado'}</span></div><div class="cajero-stats"><span>${c.num_ventas} ventas</span><span>Última: ${c.ultima_venta?new Date(c.ultima_venta).toLocaleTimeString('es-MX'):'Sin actividad'}</span></div></div><div class="cajero-total">$${(c.total_vendido||0).toFixed(2)}</div>${c.activo?`<button class="btn btn-danger btn-sm" onclick="toggleCajero(${c.id},'${c.nombre}',true)">🚫 Bloquear</button>`:`<button class="btn btn-primary btn-sm" onclick="toggleCajero(${c.id},'${c.nombre}',false)">✅ Activar</button>`}</div>`).join('')||'<div style="color:var(--muted);font-size:13px">Sin empleados</div>';
+      document.getElementById('dashCajeros').innerHTML=d.actividad_cajeros.map(c=>`<div class="cajero-card"><div class="cajero-info"><div class="cajero-nombre">${c.nombre} <span class="badge ${c.activo?'badge-green':'badge-red'}">${c.activo?'Activo':'Bloqueado'}</span></div><div class="cajero-stats"><span>${c.num_ventas} ventas</span><span>Última: ${c.ultima_venta?fmtHora(c.ultima_venta):'Sin actividad'}</span></div></div><div class="cajero-total">$${(c.total_vendido||0).toFixed(2)}</div>${c.activo?`<button class="btn btn-danger btn-sm" onclick="toggleCajero(${c.id},'${c.nombre}',true)">🚫 Bloquear</button>`:`<button class="btn btn-primary btn-sm" onclick="toggleCajero(${c.id},'${c.nombre}',false)">✅ Activar</button>`}</div>`).join('')||'<div style="color:var(--muted);font-size:13px">Sin empleados</div>';
     }
   }catch(e){console.error(e);}
 }
@@ -664,7 +758,9 @@ async function cobrar(){
   if(!carrito.length)return showPosAlert('Carrito vacío','warn');
   const desc=parseFloat(document.getElementById('cartDescuento').value)||0;
   const items=carrito.map(c=>({producto_id:c.producto_id,cantidad:c.cantidad,cantidad_venta:c.esGranel?c.cantidadVenta:c.cantidad,unidad_venta:c.esGranel?c.unidadVenta:null,es_granel:c.esGranel||false}));
-  try{const r=await api('POST','/ventas',{items,metodo_pago:metodoPago,descuento:desc});showPosAlert(`✅ Venta ${r.folio} — $${r.total.toFixed(2)}`,'success');limpiarCarrito();await loadProductosPos();loadDashboard();}
+  const _n=new Date();
+  const fecha_local=_n.getFullYear()+'-'+String(_n.getMonth()+1).padStart(2,'0')+'-'+String(_n.getDate()).padStart(2,'0')+' '+String(_n.getHours()).padStart(2,'0')+':'+String(_n.getMinutes()).padStart(2,'0')+':'+String(_n.getSeconds()).padStart(2,'0');
+  try{const r=await api('POST','/ventas',{items,metodo_pago:metodoPago,descuento:desc,fecha_local});showPosAlert(`✅ Venta ${r.folio} — $${r.total.toFixed(2)}`,'success');limpiarCarrito();await loadProductosPos();loadDashboard();}
   catch(e){showPosAlert(e.message,'error');}
 }
 
@@ -730,18 +826,24 @@ function abrirStock(id,nombre){
 
 async function guardarStock(){const id=document.getElementById('stockProdId').value,tipo=document.getElementById('stockTipo').value,cantidad=parseFloat(document.getElementById('stockCantidad').value),nota=document.getElementById('stockNota').value;try{await api('PATCH','/productos/'+id+'/stock',{tipo,cantidad,nota});closeModal('modalStock');loadInventario();loadProductosPos();}catch(e){alert(e.message);}}
 
-function resetVentasFiltro(){const hoy=new Date().toISOString().split('T')[0];document.getElementById('ventasDesde').value=hoy;document.getElementById('ventasHasta').value=hoy;}
+function resetVentasFiltro(){
+  // Fecha local del dispositivo
+  const ahora=new Date();
+  const hoy=new Date(ahora.getTime()-ahora.getTimezoneOffset()*60000).toISOString().split('T')[0];
+  document.getElementById('ventasDesde').value=hoy;
+  document.getElementById('ventasHasta').value=hoy;
+}
 
 async function loadVentas(){
   const desde=document.getElementById('ventasDesde').value,hasta=document.getElementById('ventasHasta').value;
   const ventas=await api('GET',`/ventas?desde=${desde}T00:00:00&hasta=${hasta}T23:59:59`);
-  document.getElementById('ventasTable').innerHTML=ventas.map(v=>`<tr><td><span class="badge badge-blue">${v.folio}</span></td><td>${new Date(v.creado_en).toLocaleString('es-MX')}</td><td>${v.cajero||'—'}</td><td><span class="badge badge-green">${v.metodo_pago}</span></td><td style="font-weight:700">$${v.total.toFixed(2)}</td><td><button class="btn btn-secondary btn-sm" onclick="verVenta(${v.id})">Ver</button></td></tr>`).join('')||'<tr><td colspan="6" style="text-align:center;color:var(--muted);padding:20px">Sin ventas</td></tr>';
+  document.getElementById('ventasTable').innerHTML=ventas.map(v=>`<tr><td><span class="badge badge-blue">${v.folio}</span></td><td>${fmtFecha(v.creado_en)}</td><td>${v.cajero||'—'}</td><td><span class="badge badge-green">${v.metodo_pago}</span></td><td style="font-weight:700">$${v.total.toFixed(2)}</td><td><button class="btn btn-secondary btn-sm" onclick="verVenta(${v.id})">Ver</button></td></tr>`).join('')||'<tr><td colspan="6" style="text-align:center;color:var(--muted);padding:20px">Sin ventas</td></tr>';
 }
 
 async function verVenta(id){
   const v=await api('GET','/ventas/'+id);
   document.getElementById('modalVentaTitle').textContent='Venta '+v.folio;
-  document.getElementById('modalVentaContent').innerHTML=`<div style="margin-bottom:12px;font-size:13px;color:var(--muted)">${new Date(v.creado_en).toLocaleString('es-MX')} · ${v.cajero||'—'} · ${v.metodo_pago}</div><table style="width:100%;font-size:13px"><thead><tr><th>Producto</th><th>Cant.</th><th>Precio</th><th>Subtotal</th></tr></thead><tbody>${v.items.map(i=>`<tr><td>${i.nombre}</td><td>${i.es_granel&&i.cantidad_venta?`${i.cantidad_venta} ${i.unidad_venta||''}`:i.cantidad}</td><td>$${i.precio_unitario.toFixed(i.es_granel?4:2)}</td><td>$${i.subtotal.toFixed(2)}</td></tr>`).join('')}</tbody></table><div style="text-align:right;margin-top:12px">${v.descuento>0?`<div>Descuento: -$${v.descuento.toFixed(2)}</div>`:''}<div style="font-size:18px;font-weight:700;color:var(--accent)">Total: $${v.total.toFixed(2)}</div></div>`;
+  document.getElementById('modalVentaContent').innerHTML=`<div style="margin-bottom:12px;font-size:13px;color:var(--muted)">${fmtFecha(v.creado_en)} · ${v.cajero||'—'} · ${v.metodo_pago}</div><table style="width:100%;font-size:13px"><thead><tr><th>Producto</th><th>Cant.</th><th>Precio</th><th>Subtotal</th></tr></thead><tbody>${v.items.map(i=>`<tr><td>${i.nombre}</td><td>${i.es_granel&&i.cantidad_venta?`${i.cantidad_venta} ${i.unidad_venta||''}`:i.cantidad}</td><td>$${i.precio_unitario.toFixed(i.es_granel?4:2)}</td><td>$${i.subtotal.toFixed(2)}</td></tr>`).join('')}</tbody></table><div style="text-align:right;margin-top:12px">${v.descuento>0?`<div>Descuento: -$${v.descuento.toFixed(2)}</div>`:''}<div style="font-size:18px;font-weight:700;color:var(--accent)">Total: $${v.total.toFixed(2)}</div></div>`;
   openModal('modalVenta');
 }
 
@@ -750,9 +852,9 @@ async function hacerCorte(){
   try{const r=await api('POST','/cortes',{fecha_inicio:desde,notas});const el=document.getElementById('corteResultado');el.style.display='block';el.innerHTML=`<div style="padding:28px"><div style="font-family:'Syne',sans-serif;font-size:18px;font-weight:800;margin-bottom:16px">✅ Corte Generado</div><div style="display:grid;grid-template-columns:1fr 1fr;gap:12px"><div class="stat-card" style="--accent-color:var(--accent)"><div class="stat-label">Total</div><div class="stat-value">$${r.total_ventas.toFixed(2)}</div></div><div class="stat-card"><div class="stat-label">Ventas</div><div class="stat-value">${r.num_ventas}</div></div><div class="stat-card"><div class="stat-label">💵 Efectivo</div><div class="stat-value">$${r.efectivo.toFixed(2)}</div></div><div class="stat-card"><div class="stat-label">💳 Tarjeta</div><div class="stat-value">$${r.tarjeta.toFixed(2)}</div></div></div></div>`;loadCortes();}catch(e){alert(e.message);}
 }
 
-async function loadCortes(){const cortes=await api('GET','/cortes');document.getElementById('cortesTable').innerHTML=cortes.map(c=>`<tr><td>${new Date(c.creado_en).toLocaleString('es-MX')}</td><td>${c.cajero||'—'}</td><td>${c.num_ventas}</td><td>$${c.efectivo.toFixed(2)}</td><td>$${c.tarjeta.toFixed(2)}</td><td style="font-weight:700">$${c.total_ventas.toFixed(2)}</td></tr>`).join('')||'<tr><td colspan="6" style="text-align:center;color:var(--muted)">Sin cortes</td></tr>';}
+async function loadCortes(){const cortes=await api('GET','/cortes');document.getElementById('cortesTable').innerHTML=cortes.map(c=>`<tr><td>${fmtFecha(c.creado_en)}</td><td>${c.cajero||'—'}</td><td>${c.num_ventas}</td><td>$${c.efectivo.toFixed(2)}</td><td>$${c.tarjeta.toFixed(2)}</td><td style="font-weight:700">$${c.total_ventas.toFixed(2)}</td></tr>`).join('')||'<tr><td colspan="6" style="text-align:center;color:var(--muted)">Sin cortes</td></tr>';}
 
-async function loadUsuarios(){const users=await api('GET','/usuarios');document.getElementById('usuariosTable').innerHTML=users.map(u=>`<tr><td style="font-weight:600">${u.nombre}</td><td>${u.email}</td><td><span class="badge ${u.rol==='dueno'?'badge-warn':'badge-blue'}">${u.rol}</span></td><td><span class="badge ${u.activo?'badge-green':'badge-red'}">${u.activo?'Activo':'Inactivo'}</span></td><td>${u.rol!=='dueno'?`<button class="btn btn-sm ${u.activo?'btn-danger':'btn-primary'}" onclick="toggleUsuario(${u.id})">${u.activo?'Desactivar':'Activar'}</button>`:'—'}</td></tr>`).join('');}
+async function loadUsuarios(){const users=await api('GET','/usuarios');document.getElementById('usuariosTable').innerHTML=users.map(u=>`<tr><td style="font-weight:600">${u.nombre}</td><td>${u.email}</td><td><span class="badge ${u.rol==='corporativo'?'badge-corp':u.rol==='dueno'?'badge-warn':'badge-blue'}">${u.rol}</span></td><td><span class="badge ${u.activo?'badge-green':'badge-red'}">${u.activo?'Activo':'Inactivo'}</span></td><td>${u.rol!=='corporativo'?`<button class="btn btn-sm ${u.activo?'btn-danger':'btn-primary'}" onclick="toggleUsuario(${u.id})">${u.activo?'Desactivar':'Activar'}</button>`:'—'}</td></tr>`).join('');}
 async function guardarUsuario(){try{await api('POST','/usuarios',{nombre:document.getElementById('userNombre').value,email:document.getElementById('userEmail').value,password:document.getElementById('userPassword').value,rol:document.getElementById('userRol').value});closeModal('modalUsuario');loadUsuarios();}catch(e){alert(e.message);}}
 async function toggleUsuario(id){await api('PATCH','/usuarios/'+id+'/toggle');loadUsuarios();}
 function setCajeroHoy(){document.getElementById('cajeroFecha').value=new Date().toISOString().split('T')[0];}
@@ -762,11 +864,16 @@ async function loadCajerosActividad(){
   try{
     const r=await api('GET','/cajeros/actividad?fecha='+fecha),d=await api('GET','/dashboard');
     document.getElementById('alertasActividad').innerHTML=d.alertas_actividad?.length>0?d.alertas_actividad.map(a=>`<div class="alerta-card alerta-${a.tipo}">⚠️ ${a.mensaje}</div>`).join(''):'<div class="alert alert-success">✅ Sin actividad inusual hoy</div>';
-    document.getElementById('cajerosLista').innerHTML=r.cajeros.map(c=>`<div class="cajero-card"><div class="cajero-info"><div class="cajero-nombre">${c.nombre} <span class="badge ${c.activo?'badge-green':'badge-red'}">${c.activo?'Activo':'Bloqueado'}</span></div><div class="cajero-stats"><span>${c.num_ventas} ventas</span><span>💵 $${(c.efectivo||0).toFixed(2)}</span><span>💳 $${(c.tarjeta||0).toFixed(2)}</span><span>📱 $${(c.transferencia||0).toFixed(2)}</span><span>Desc: $${(c.total_descuentos||0).toFixed(2)}</span><span>Última: ${c.ultima_venta?new Date(c.ultima_venta).toLocaleTimeString('es-MX'):'Sin actividad'}</span></div></div><div class="cajero-total">$${(c.total_vendido||0).toFixed(2)}</div>${c.activo?`<button class="btn btn-danger btn-sm" onclick="toggleCajero(${c.id},'${c.nombre}',true)">🚫 Bloquear</button>`:`<button class="btn btn-primary btn-sm" onclick="toggleCajero(${c.id},'${c.nombre}',false)">✅ Activar</button>`}</div>`).join('')||'<div style="color:var(--muted);font-size:13px">Sin empleados</div>';
+    document.getElementById('cajerosLista').innerHTML=r.cajeros.map(c=>`<div class="cajero-card"><div class="cajero-info"><div class="cajero-nombre">${c.nombre} <span class="badge ${c.activo?'badge-green':'badge-red'}">${c.activo?'Activo':'Bloqueado'}</span></div><div class="cajero-stats"><span>${c.num_ventas} ventas</span><span>💵 $${(c.efectivo||0).toFixed(2)}</span><span>💳 $${(c.tarjeta||0).toFixed(2)}</span><span>📱 $${(c.transferencia||0).toFixed(2)}</span><span>Desc: $${(c.total_descuentos||0).toFixed(2)}</span><span>Última: ${c.ultima_venta?fmtHora(c.ultima_venta):'Sin actividad'}</span></div></div><div class="cajero-total">$${(c.total_vendido||0).toFixed(2)}</div>${c.activo?`<button class="btn btn-danger btn-sm" onclick="toggleCajero(${c.id},'${c.nombre}',true)">🚫 Bloquear</button>`:`<button class="btn btn-primary btn-sm" onclick="toggleCajero(${c.id},'${c.nombre}',false)">✅ Activar</button>`}</div>`).join('')||'<div style="color:var(--muted);font-size:13px">Sin empleados</div>';
   }catch(e){console.error(e);}
 }
 
-function setExportHoy(){const h=new Date().toISOString().split('T')[0];document.getElementById('exportDesde').value=h;document.getElementById('exportHasta').value=h;}
+function setExportHoy(){
+  const ahora=new Date();
+  const h=new Date(ahora.getTime()-ahora.getTimezoneOffset()*60000).toISOString().split('T')[0];
+  document.getElementById('exportDesde').value=h;
+  document.getElementById('exportHasta').value=h;
+}
 function setExportMes(){const n=new Date();document.getElementById('exportDesde').value=new Date(n.getFullYear(),n.getMonth(),1).toISOString().split('T')[0];document.getElementById('exportHasta').value=new Date(n.getFullYear(),n.getMonth()+1,0).toISOString().split('T')[0];}
 function clearExportFechas(){document.getElementById('exportDesde').value='';document.getElementById('exportHasta').value='';}
 
@@ -778,6 +885,75 @@ function exportar(tipo){
 
 function descargarBackup(){fetch('/api/backup',{headers:{'Authorization':'Bearer '+token}}).then(r=>r.blob()).then(blob=>{const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=`tienda_backup_${new Date().toISOString().split('T')[0]}.db`;a.click();}).catch(e=>alert('Error: '+e.message));}
 
+
+
+// ===================== OS =====================
+async function loadOSUsuarios() {
+  try {
+    const users = await api('GET', '/os/usuarios');
+    document.getElementById('osUsuariosTable').innerHTML = users.map(u => `
+      <tr>
+        <td style="font-weight:600">${u.nombre}</td>
+        <td>${u.email}</td>
+        <td><span class="badge ${u.rol==='os'?'badge-os':u.rol==='dueno'?'badge-warn':'badge-blue'}">${u.rol.toUpperCase()}</span></td>
+        <td><span class="badge ${u.activo?'badge-green':'badge-red'}">${u.activo?'Activo':'Inactivo'}</span></td>
+        <td>${u.rol!=='os'?`<button class="btn btn-sm ${u.activo?'btn-danger':'btn-primary'}" onclick="toggleOSUsuario(${u.id})">${u.activo?'Desactivar':'Activar'}</button>`:'—'}</td>
+      </tr>`).join('');
+  } catch(e) { console.error(e); }
+}
+
+async function guardarOSUsuario() {
+  try {
+    await api('POST', '/os/usuarios', {
+      nombre: document.getElementById('osUserNombre').value,
+      email: document.getElementById('osUserEmail').value,
+      password: document.getElementById('osUserPassword').value,
+      rol: document.getElementById('osUserRol').value
+    });
+    closeModal('modalOSUsuario');
+    loadOSUsuarios();
+  } catch(e) { alert(e.message); }
+}
+
+async function toggleOSUsuario(id) {
+  await api('PATCH', '/usuarios/' + id + '/toggle');
+  loadOSUsuarios();
+}
+
+
+// ===== CORPORATIVO =====
+async function loadCorpUsuarios() {
+  try {
+    const users = await api('GET', '/corporativo/usuarios');
+    document.getElementById('corpUsuariosTable').innerHTML = users.map(u =>
+      `<tr>
+        <td style="font-weight:600">${u.nombre}</td>
+        <td>${u.email}</td>
+        <td><span class="badge ${u.rol==='dueno'?'badge-warn':u.rol==='corporativo'?'badge-purple':'badge-blue'}">${u.rol}</span></td>
+        <td><span class="badge ${u.activo?'badge-green':'badge-red'}">${u.activo?'Activo':'Inactivo'}</span></td>
+        <td>${u.rol!=='corporativo'?`<button class="btn btn-sm ${u.activo?'btn-danger':'btn-primary'}" onclick="toggleCorpUsuario(${u.id})">${u.activo?'Desactivar':'Activar'}</button>`:'—'}</td>
+      </tr>`
+    ).join('');
+  } catch(e) { console.error(e); }
+}
+
+async function guardarCorpUsuario() {
+  try {
+    await api('POST', '/corporativo/usuarios', {
+      nombre: document.getElementById('corpUserNombre').value,
+      email: document.getElementById('corpUserEmail').value,
+      password: document.getElementById('corpUserPassword').value,
+      rol: document.getElementById('corpUserRol').value
+    });
+    closeModal('modalCorpUsuario');
+    loadCorpUsuarios();
+  } catch(e) { alert(e.message); }
+}
+
+async function toggleCorpUsuario(id) {
+  await api('PATCH', '/corporativo/usuarios/' + id + '/toggle');
+  loadCorpUsuarios();
+}
 
 // ===================== DEUDAS =====================
 async function loadDeudas() {
@@ -810,7 +986,7 @@ async function loadDeudas() {
             ${d.envases > 0 ? `<span class="badge badge-blue">🧴 ${d.envases} envase${d.envases !== 1 ? 's' : ''}</span>` : ''}
           </div>
           ${d.notas ? `<div style="font-size:12px;color:var(--muted);margin-top:4px">${d.notas}</div>` : ''}
-          <div style="font-size:11px;color:var(--muted);margin-top:4px;font-family:'JetBrains Mono',monospace">${new Date(d.creado_en).toLocaleString('es-MX')} · ${d.registrado_por || '—'}</div>
+          <div style="font-size:11px;color:var(--muted);margin-top:4px;font-family:'JetBrains Mono',monospace">${fmtFecha(d.creado_en)} · ${d.registrado_por || '—'}</div>
         </div>
         <div style="display:flex;gap:8px;flex-shrink:0">
           <button class="btn btn-secondary btn-sm" onclick="editarDeuda(${d.id})">✏️</button>
