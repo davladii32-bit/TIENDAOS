@@ -567,19 +567,31 @@ try{user=JSON.parse(localStorage.getItem('user')||'null');}catch(e){user=null;}
 function fmtFecha(str) {
   if (!str) return '—';
   const s = str.replace(' ', 'T') + 'Z';
-  return new Intl.DateTimeFormat('es-MX', {
-    timeZone: 'America/Mexico_City',
-    year: 'numeric', month: '2-digit', day: '2-digit',
-    hour: '2-digit', minute: '2-digit', second: '2-digit'
-  }).format(new Date(s));
+  const d = new Date(s);
+  // Obtener componentes en zona horaria México
+  const opts = { timeZone: 'America/Mexico_City' };
+  const mx = new Date(d.toLocaleString('en-US', opts));
+  const pad = n => String(n).padStart(2,'0');
+  const yyyy = mx.getFullYear();
+  const mm = pad(mx.getMonth()+1);
+  const dd = pad(mx.getDate());
+  const hh = pad(mx.getHours());
+  const min = pad(mx.getMinutes());
+  const ss = pad(mx.getSeconds());
+  const ampm = mx.getHours() >= 12 ? 'p.m.' : 'a.m.';
+  const h12 = mx.getHours() % 12 || 12;
+  return `${dd}/${mm}/${yyyy}, ${pad(h12)}:${min}:${ss} ${ampm}`;
 }
 function fmtHora(str) {
   if (!str) return 'Sin actividad';
   const s = str.replace(' ', 'T') + 'Z';
-  return new Intl.DateTimeFormat('es-MX', {
-    timeZone: 'America/Mexico_City',
-    hour: '2-digit', minute: '2-digit'
-  }).format(new Date(s));
+  const d = new Date(s);
+  const opts = { timeZone: 'America/Mexico_City' };
+  const mx = new Date(d.toLocaleString('en-US', opts));
+  const pad = n => String(n).padStart(2,'0');
+  const ampm = mx.getHours() >= 12 ? 'p.m.' : 'a.m.';
+  const h12 = mx.getHours() % 12 || 12;
+  return `${pad(h12)}:${pad(mx.getMinutes())} ${ampm}`;
 }
 
 function esGranel(p){return p&&(p.tipo_venta==='granel_liquido'||p.tipo_venta==='granel_solido');}
