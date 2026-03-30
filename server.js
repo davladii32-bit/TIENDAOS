@@ -147,6 +147,15 @@ if (!osExiste) {
 
 
 
+
+// Helper: fecha y hora actual en México (UTC-6)
+function ahoraMexico() {
+  const now = new Date();
+  // Offset México Ciudad: UTC-6 (sin horario de verano en este cálculo simple)
+  const mx = new Date(now.getTime() - 6 * 60 * 60 * 1000);
+  return mx.toISOString().replace('T', ' ').substring(0, 19);
+}
+
 // MIDDLEWARE
 function authMiddleware(req, res, next) {
   const token = req.headers.authorization?.split(' ')[1];
@@ -296,7 +305,8 @@ app.post('/api/ventas', authMiddleware, (req, res) => {
     }
     total -= (descuento || 0);
 
-    const venta = db.prepare('INSERT INTO ventas (folio, usuario_id, total, descuento, metodo_pago, notas) VALUES (?, ?, ?, ?, ?, ?)').run(folio, req.user.id, total, descuento || 0, metodo_pago || 'efectivo', notas || '');
+    const venta = db.prepare('INSERT INTO ventas (folio, usuario_id, total, descuento, metodo_pago, notas, creado_en) VALUES (?, ?, ?, ?, ?, ?, ?)')
+      .run(folio, req.user.id, total, descuento || 0, metodo_pago || 'efectivo', notas || '', ahoraMexico());
 
     for (const item of items) {
       const prod = db.prepare('SELECT * FROM productos WHERE id = ?').get(item.producto_id);
@@ -362,12 +372,12 @@ app.get('/api/ventas/:id', authMiddleware, (req, res) => {
 app.post('/api/cortes', authMiddleware, (req, res) => {
   const { fecha_inicio, notas } = req.body;
   const desde = fecha_inicio || new Date().toISOString().split('T')[0] + 'T00:00:00.000Z';
-  const ventas = db.prepare("SELECT * FROM ventas WHERE datetime(creado_en, '+6 hours') >= datetime(?) AND datetime(creado_en, '+6 hours') <= datetime(CURRENT_TIMESTAMP, '+6 hours')").all(desde);
+  const ventas = db.prepare("SELECT * FROM ventas WHERE creado_en >= ? AND creado_en <= ?").all(desde, ahoraMexico());
   const total = ventas.reduce((s, v) => s + v.total, 0);
   const efectivo = ventas.filter(v => v.metodo_pago === 'efectivo').reduce((s, v) => s + v.total, 0);
   const tarjeta = ventas.filter(v => v.metodo_pago === 'tarjeta').reduce((s, v) => s + v.total, 0);
   const transferencia = ventas.filter(v => v.metodo_pago === 'transferencia').reduce((s, v) => s + v.total, 0);
-  const r = db.prepare('INSERT INTO cortes (usuario_id, fecha_inicio, total_ventas, num_ventas, efectivo, tarjeta, transferencia, notas) VALUES (?, ?, ?, ?, ?, ?, ?, ?)').run(req.user.id, desde, total, ventas.length, efectivo, tarjeta, transferencia, notas || '');
+  const r = db.prepare('INSERT INTO cortes (usuario_id, fecha_inicio, total_ventas, num_ventas, efectivo, tarjeta, transferencia, notas, creado_en) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)').run(req.user.id, desde, total, ventas.length, efectivo, tarjeta, transferencia, notas || '', ahoraMexico());
   res.json({ id: r.lastInsertRowid, total_ventas: total, num_ventas: ventas.length, efectivo, tarjeta, transferencia });
 });
 
@@ -377,8 +387,8 @@ app.get('/api/cortes', authMiddleware, (req, res) => {
 
 // ===== DASHBOARD =====
 app.get('/api/dashboard', authMiddleware, (req, res) => {
-  const now = new Date(); const hoy = new Date(now.getTime() - 6*60*60*1000).toISOString().split('T')[0];
-  const ventas_hoy = db.prepare(`SELECT COUNT(*) as num, COALESCE(SUM(total),0) as total FROM ventas WHERE date(creado_en, '+6 hours') = ?`).get(hoy);
+  const hoy = ahoraMexico().substring(0, 10);
+  const ventas_hoy = db.prepare(`SELECT COUNT(*) as num, COALESCE(SUM(total),0) as total FROM ventas WHERE date(creado_en) = ?`).get(hoy);
   const productos_total = db.prepare('SELECT COUNT(*) as num FROM productos WHERE activo = 1').get();
   const bajo_stock = db.prepare('SELECT COUNT(*) as num FROM productos WHERE activo = 1 AND stock <= stock_minimo').get();
   const ultimas_ventas = db.prepare('SELECT v.folio, v.total, v.metodo_pago, v.creado_en, u.nombre as cajero FROM ventas v LEFT JOIN usuarios u ON v.usuario_id = u.id ORDER BY v.creado_en DESC LIMIT 5').all();
@@ -389,14 +399,14 @@ app.get('/api/dashboard', authMiddleware, (req, res) => {
       COALESCE(SUM(v.total), 0) as total_vendido,
       MAX(v.creado_en) as ultima_venta
     FROM usuarios u
-    LEFT JOIN ventas v ON v.usuario_id = u.id AND date(v.creado_en, '+6 hours') = ?
+    LEFT JOIN ventas v ON v.usuario_id = u.id AND date(v.creado_en) = ?
     WHERE u.rol != 'dueno'
     GROUP BY u.id ORDER BY total_vendido DESC
   `).all(hoy);
   const alertas_actividad = [];
-  const fuera = db.prepare(`SELECT COUNT(*) as num FROM ventas WHERE date(creado_en, '+6 hours') = ? AND (CAST(strftime('%H', creado_en, '+6 hours') AS INTEGER) < 7 OR CAST(strftime('%H', creado_en, '+6 hours') AS INTEGER) >= 22)`).get(hoy);
+  const fuera = db.prepare(`SELECT COUNT(*) as num FROM ventas WHERE date(creado_en) = ? AND (CAST(strftime('%H', creado_en) AS INTEGER) < 7 OR CAST(strftime('%H', creado_en) AS INTEGER) >= 22)`).get(hoy);
   if (fuera.num > 0) alertas_actividad.push({ tipo: 'warning', mensaje: `${fuera.num} venta(s) fuera de horario normal` });
-  const desc = db.prepare(`SELECT u.nombre, COUNT(v.id) as num_descuentos FROM ventas v LEFT JOIN usuarios u ON v.usuario_id = u.id WHERE date(v.creado_en, '+6 hours') = ? AND v.descuento > 0 GROUP BY v.usuario_id HAVING num_descuentos >= 3`).all(hoy);
+  const desc = db.prepare(`SELECT u.nombre, COUNT(v.id) as num_descuentos FROM ventas v LEFT JOIN usuarios u ON v.usuario_id = u.id WHERE date(v.creado_en) = ? AND v.descuento > 0 GROUP BY v.usuario_id HAVING num_descuentos >= 3`).all(hoy);
   desc.forEach(d => alertas_actividad.push({ tipo: 'danger', mensaje: `${d.nombre} aplicó descuentos en ${d.num_descuentos} ventas hoy` }));
   // deudas pendientes para el dashboard
   const deudas_count = db.prepare('SELECT COUNT(*) as num FROM deudas').get();
@@ -416,7 +426,7 @@ app.get('/api/cajeros/actividad', authMiddleware, solodueno, (req, res) => {
       COALESCE(SUM(v.descuento), 0) as total_descuentos,
       MAX(v.creado_en) as ultima_venta
     FROM usuarios u
-    LEFT JOIN ventas v ON v.usuario_id = u.id AND date(v.creado_en, '+6 hours') = ?
+    LEFT JOIN ventas v ON v.usuario_id = u.id AND date(v.creado_en) = ?
     WHERE u.rol != 'dueno'
     GROUP BY u.id ORDER BY total_vendido DESC
   `).all(dia);
@@ -471,7 +481,7 @@ app.get('/api/deudas', authMiddleware, (req, res) => {
 app.post('/api/deudas', authMiddleware, (req, res) => {
   const { nombre, monto, envases, notas } = req.body;
   if (!nombre) return res.status(400).json({ error: 'El nombre es requerido' });
-  const r = db.prepare('INSERT INTO deudas (nombre, monto, envases, notas, usuario_id) VALUES (?, ?, ?, ?, ?)').run(nombre, monto || 0, envases || 0, notas || '', req.user.id);
+  const r = db.prepare('INSERT INTO deudas (nombre, monto, envases, notas, usuario_id, creado_en) VALUES (?, ?, ?, ?, ?, ?)').run(nombre, monto || 0, envases || 0, notas || '', req.user.id, ahoraMexico());
   res.json({ id: r.lastInsertRowid, mensaje: 'Deuda registrada' });
 });
 
@@ -495,8 +505,8 @@ app.get('/api/exportar/ventas', authMiddleware, solodueno, (req, res) => {
   const { desde, hasta } = req.query;
   let query = `SELECT v.folio, v.creado_en as fecha, u.nombre as cajero, v.metodo_pago, v.descuento, v.total, v.notas FROM ventas v LEFT JOIN usuarios u ON v.usuario_id = u.id WHERE 1=1`;
   const params = [];
-  if (desde) { query += " AND datetime(v.creado_en, '+6 hours') >= datetime(?)"; params.push(desde); }
-  if (hasta) { query += " AND datetime(v.creado_en, '+6 hours') <= datetime(?)"; params.push(hasta); }
+  if (desde) { query += " AND v.creado_en >= ?"; params.push(desde); }
+  if (hasta) { query += " AND v.creado_en <= ?"; params.push(hasta); }
   query += ' ORDER BY v.creado_en DESC';
   const ventas = db.prepare(query).all(...params);
   let csv = 'Folio,Fecha,Cajero,Método de Pago,Descuento,Total,Notas\n';
@@ -511,8 +521,8 @@ app.get('/api/exportar/detalle-ventas', authMiddleware, solodueno, (req, res) =>
   let query = `SELECT v.folio, v.creado_en as fecha, u.nombre as cajero, p.codigo, p.nombre as producto, vi.cantidad, vi.cantidad_venta, vi.unidad_venta, vi.es_granel, vi.precio_unitario, vi.subtotal
     FROM venta_items vi LEFT JOIN ventas v ON vi.venta_id = v.id LEFT JOIN productos p ON vi.producto_id = p.id LEFT JOIN usuarios u ON v.usuario_id = u.id WHERE 1=1`;
   const params = [];
-  if (desde) { query += " AND datetime(v.creado_en, '+6 hours') >= datetime(?)"; params.push(desde); }
-  if (hasta) { query += " AND datetime(v.creado_en, '+6 hours') <= datetime(?)"; params.push(hasta); }
+  if (desde) { query += " AND v.creado_en >= ?"; params.push(desde); }
+  if (hasta) { query += " AND v.creado_en <= ?"; params.push(hasta); }
   query += ' ORDER BY v.creado_en DESC';
   const items = db.prepare(query).all(...params);
   let csv = 'Folio,Fecha,Cajero,Código,Producto,Cantidad (inv),Cantidad (venta),Unidad Venta,Precio Unitario,Subtotal\n';
