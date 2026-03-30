@@ -148,11 +148,13 @@ if (!osExiste) {
 
 
 
-// Helper: usa fecha del cliente si viene, si no usa servidor
+// Helper: fecha local del servidor (usa TZ=America/Mexico_City de Railway)
 function ahoraMexico(fechaCliente) {
   if (fechaCliente) return fechaCliente.replace('T', ' ').substring(0, 19);
-  // fallback: UTC (Railway guardará en UTC, frontend convierte al mostrar)
-  return new Date().toISOString().replace('T', ' ').substring(0, 19);
+  // Usar fecha LOCAL del servidor (Railway tiene TZ=America/Mexico_City)
+  const now = new Date();
+  const pad = n => String(n).padStart(2, '0');
+  return `${now.getFullYear()}-${pad(now.getMonth()+1)}-${pad(now.getDate())} ${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}`;
 }
 
 // MIDDLEWARE
