@@ -757,7 +757,9 @@ async function cobrar(){
   if(!carrito.length)return showPosAlert('Carrito vacío','warn');
   const desc=parseFloat(document.getElementById('cartDescuento').value)||0;
   const items=carrito.map(c=>({producto_id:c.producto_id,cantidad:c.cantidad,cantidad_venta:c.esGranel?c.cantidadVenta:c.cantidad,unidad_venta:c.esGranel?c.unidadVenta:null,es_granel:c.esGranel||false}));
-  try{const r=await api('POST','/ventas',{items,metodo_pago:metodoPago,descuento:desc});showPosAlert(`✅ Venta ${r.folio} — $${r.total.toFixed(2)}`,'success');limpiarCarrito();await loadProductosPos();loadDashboard();}
+  const _n=new Date();
+  const fecha_local=_n.getFullYear()+'-'+String(_n.getMonth()+1).padStart(2,'0')+'-'+String(_n.getDate()).padStart(2,'0')+' '+String(_n.getHours()).padStart(2,'0')+':'+String(_n.getMinutes()).padStart(2,'0')+':'+String(_n.getSeconds()).padStart(2,'0');
+  try{const r=await api('POST','/ventas',{items,metodo_pago:metodoPago,descuento:desc,fecha_local});showPosAlert(`✅ Venta ${r.folio} — $${r.total.toFixed(2)}`,'success');limpiarCarrito();await loadProductosPos();loadDashboard();}
   catch(e){showPosAlert(e.message,'error');}
 }
 
