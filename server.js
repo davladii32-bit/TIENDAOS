@@ -148,12 +148,11 @@ if (!osExiste) {
 
 
 
-// Helper: fecha y hora actual en México (UTC-6)
-function ahoraMexico() {
-  const now = new Date();
-  // Offset México Ciudad: UTC-6 (sin horario de verano en este cálculo simple)
-  const mx = new Date(now.getTime() - 6 * 60 * 60 * 1000);
-  return mx.toISOString().replace('T', ' ').substring(0, 19);
+// Helper: usa fecha del cliente si viene, si no usa servidor
+function ahoraMexico(fechaCliente) {
+  if (fechaCliente) return fechaCliente.replace('T', ' ').substring(0, 19);
+  // fallback: UTC (Railway guardará en UTC, frontend convierte al mostrar)
+  return new Date().toISOString().replace('T', ' ').substring(0, 19);
 }
 
 // MIDDLEWARE
@@ -279,7 +278,7 @@ app.delete('/api/productos/:id', authMiddleware, solodueno, (req, res) => {
 
 // ===== VENTAS (con soporte granel) =====
 app.post('/api/ventas', authMiddleware, (req, res) => {
-  const { items, metodo_pago, descuento, notas } = req.body;
+  const { items, metodo_pago, descuento, notas, fecha_local } = req.body;
   if (!items?.length) return res.status(400).json({ error: 'Sin productos' });
   const folio = 'V' + Date.now();
   let total = 0;
@@ -306,7 +305,7 @@ app.post('/api/ventas', authMiddleware, (req, res) => {
     total -= (descuento || 0);
 
     const venta = db.prepare('INSERT INTO ventas (folio, usuario_id, total, descuento, metodo_pago, notas, creado_en) VALUES (?, ?, ?, ?, ?, ?, ?)')
-      .run(folio, req.user.id, total, descuento || 0, metodo_pago || 'efectivo', notas || '', ahoraMexico());
+      .run(folio, req.user.id, total, descuento || 0, metodo_pago || 'efectivo', notas || '', ahoraMexico(fecha_local));
 
     for (const item of items) {
       const prod = db.prepare('SELECT * FROM productos WHERE id = ?').get(item.producto_id);
@@ -387,7 +386,7 @@ app.get('/api/cortes', authMiddleware, (req, res) => {
 
 // ===== DASHBOARD =====
 app.get('/api/dashboard', authMiddleware, (req, res) => {
-  const hoy = ahoraMexico().substring(0, 10);
+  const hoy = new Date().toISOString().substring(0, 10); // UTC date, frontend filtra por local
   const ventas_hoy = db.prepare(`SELECT COUNT(*) as num, COALESCE(SUM(total),0) as total FROM ventas WHERE date(creado_en) = ?`).get(hoy);
   const productos_total = db.prepare('SELECT COUNT(*) as num FROM productos WHERE activo = 1').get();
   const bajo_stock = db.prepare('SELECT COUNT(*) as num FROM productos WHERE activo = 1 AND stock <= stock_minimo').get();
