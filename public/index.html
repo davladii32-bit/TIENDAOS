@@ -115,14 +115,17 @@ tr:last-child td{border-bottom:none;}tr:hover td{background:#fafaf8;}
 .export-card{background:white;border-radius:14px;border:1px solid var(--border);padding:24px;}
 .export-card h3{font-family:'Syne',sans-serif;font-size:16px;font-weight:700;margin-bottom:6px;}
 .export-card p{font-size:13px;color:var(--muted);margin-bottom:16px;}
+/* GRANEL */
 .granel-info{background:#f5f3ff;border:1px solid #c4b5fd;border-radius:10px;padding:10px 14px;font-size:12px;color:#6d28d9;margin-bottom:10px;font-family:'JetBrains Mono',monospace;}
 .granel-input-row{display:flex;align-items:center;gap:10px;margin-top:8px;}
 .granel-input-row input{width:120px;padding:12px;border:2px solid #c4b5fd;border-radius:8px;font-family:'JetBrains Mono',monospace;font-size:18px;text-align:center;outline:none;}
 .granel-input-row input:focus{border-color:#7c3aed;}
 .granel-input-row span{font-size:16px;color:#6d28d9;font-weight:700;}
+/* HAMBURGUESA */
 .menu-toggle{display:none;position:fixed;top:14px;left:14px;z-index:300;background:var(--sidebar);color:white;border:none;border-radius:10px;width:44px;height:44px;font-size:22px;cursor:pointer;align-items:center;justify-content:center;box-shadow:0 4px 12px rgba(0,0,0,0.3);}
 .sidebar-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:149;}
 .sidebar-overlay.open{display:block;}
+/* MOVIL */
 @media(max-width:768px){
   .menu-toggle{display:flex;}
   .sidebar{transform:translateX(-100%);}
@@ -183,6 +186,8 @@ tr:last-child td{border-bottom:none;}tr:hover td{background:#fafaf8;}
       <div class="nav-item" onclick="showPage('corte',this)"><span class="icon">🧾</span><span>Corte de Caja</span></div>
       <div class="sidebar-section">Tienda</div>
       <div class="nav-item" onclick="showPage('deudas',this)"><span class="icon">📋</span><span>Deudas</span></div>
+      <div class="sidebar-section" id="sectionCorp" style="display:none">Corporativo</div>
+      <div class="nav-item" id="navCorp" style="display:none" onclick="showPage('corporativo',this)"><span class="icon">🏢</span><span>Gestión Usuarios</span></div>
       <div class="sidebar-section" id="sectionAdmin" style="display:none">Admin</div>
       <div class="nav-item" id="navUsuarios" style="display:none" onclick="showPage('usuarios',this)"><span class="icon">👥</span><span>Usuarios</span></div>
       <div class="nav-item" id="navCajeros" style="display:none" onclick="showPage('cajeros',this)"><span class="icon">🔍</span><span>Monitoreo</span></div>
@@ -350,6 +355,21 @@ tr:last-child td{border-bottom:none;}tr:hover td{background:#fafaf8;}
           <button class="btn btn-danger" onclick="descargarBackup()">⬇️ Descargar Backup Completo</button>
         </div>
       </div>
+
+
+      <!-- CORPORATIVO -->
+      <div class="page" id="page-corporativo">
+        <div class="page-title">🏢 Gestión de Usuarios</div>
+        <div class="page-sub">Crear y administrar dueños y administradores</div>
+        <div style="margin-bottom:16px">
+          <button class="btn btn-primary" onclick="openModal('modalCorpUsuario')">+ Nuevo Usuario</button>
+        </div>
+        <div class="table-card">
+          <table><thead><tr><th>Nombre</th><th>Email</th><th>Rol</th><th>Estado</th><th>Acción</th></tr></thead>
+          <tbody id="corpUsuariosTable"></tbody></table>
+        </div>
+      </div>
+
       <!-- DEUDAS -->
       <div class="page" id="page-deudas">
         <div class="page-title">Deudas y Fiados</div>
@@ -360,6 +380,7 @@ tr:last-child td{border-bottom:none;}tr:hover td{background:#fafaf8;}
         </div>
         <div id="deudasLista"></div>
       </div>
+
       <!-- OS -->
       <div class="page" id="page-os">
         <div class="page-title">Gestión OS</div>
@@ -450,6 +471,8 @@ tr:last-child td{border-bottom:none;}tr:hover td{background:#fafaf8;}
   </div>
 </div>
 
+
+<!-- Modal OS Usuario -->
 <div class="modal-overlay" id="modalOSUsuario">
   <div class="modal" style="max-width:420px">
     <h2>Nuevo Usuario</h2>
@@ -470,6 +493,29 @@ tr:last-child td{border-bottom:none;}tr:hover td{background:#fafaf8;}
   </div>
 </div>
 
+
+<!-- Modal Corporativo Usuario -->
+<div class="modal-overlay" id="modalCorpUsuario">
+  <div class="modal" style="max-width:420px">
+    <h2>Nuevo Usuario</h2>
+    <div class="form-group"><label>Nombre completo</label><input id="corpUserNombre" placeholder="Nombre"></div>
+    <div class="form-group"><label>Correo electrónico</label><input type="email" id="corpUserEmail" placeholder="correo@tienda.com"></div>
+    <div class="form-group"><label>Contraseña</label><input type="password" id="corpUserPassword" placeholder="Mínimo 6 caracteres"></div>
+    <div class="form-group"><label>Rol</label>
+      <select id="corpUserRol">
+        <option value="dueno">Dueño de tienda</option>
+        <option value="admin">Administrador</option>
+        <option value="cajero">Cajero</option>
+      </select>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeModal('modalCorpUsuario')">Cancelar</button>
+      <button class="btn btn-primary" onclick="guardarCorpUsuario()">Crear</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Granel -->
 <div class="modal-overlay" id="modalGranel">
   <div class="modal" style="max-width:380px">
     <h2 id="granelModalTitle">Vender a granel</h2>
@@ -492,6 +538,8 @@ tr:last-child td{border-bottom:none;}tr:hover td{background:#fafaf8;}
   </div>
 </div>
 
+
+<!-- Modal Deuda -->
 <div class="modal-overlay" id="modalDeuda">
   <div class="modal" style="max-width:420px">
     <h2 id="modalDeudaTitle">Nueva Deuda</h2>
@@ -514,18 +562,18 @@ const API='';
 let token=localStorage.getItem('token'),user=null,carrito=[],metodoPago='efectivo',camActiva=false,productosCache=[],granelProdActual=null;
 try{user=JSON.parse(localStorage.getItem('user')||'null');}catch(e){user=null;}
 
-// ===== FIX TIMEZONE: convierte fecha de SQLite a hora México =====
+
+// Helper para fechas con timezone México
 function fmtFecha(str) {
   if (!str) return '—';
-  // SQLite devuelve "2026-03-29 21:45:13" sin Z — agregamos Z para que JS lo trate como UTC
+  // Forzar que se interprete como UTC agregando Z si no la tiene
   const s = str.includes('Z') || str.includes('+') ? str : str.replace(' ', 'T') + 'Z';
-  return new Date(s).toLocaleString('es-MX', { timeZone: 'America/Mexico_City' });
+  return new Date(s).toLocaleString('es-MX', {timeZone:'America/Mexico_City'});
 }
-
 function fmtHora(str) {
-  if (!str) return '—';
+  if (!str) return 'Sin actividad';
   const s = str.includes('Z') || str.includes('+') ? str : str.replace(' ', 'T') + 'Z';
-  return new Date(s).toLocaleTimeString('es-MX', { timeZone: 'America/Mexico_City', hour: '2-digit', minute: '2-digit' });
+  return new Date(s).toLocaleTimeString('es-MX', {timeZone:'America/Mexico_City'});
 }
 
 function esGranel(p){return p&&(p.tipo_venta==='granel_liquido'||p.tipo_venta==='granel_solido');}
@@ -552,10 +600,12 @@ function initApp(){
   if(!token||!user)return;
   document.getElementById('loginScreen').style.display='none';document.getElementById('app').style.display='block';
   document.getElementById('sidebarName').textContent=user.nombre;document.getElementById('sidebarRole').textContent=user.rol.toUpperCase();
-  if(user.rol==='dueno'||user.rol==='os'){['sectionAdmin','navUsuarios','navCajeros','navExportar'].forEach(id=>{const el=document.getElementById(id);if(el)el.style.display=id==='sectionAdmin'?'block':'flex';});document.getElementById('dashCajerosSection').style.display='block';}
+  if(user.rol==='dueno'||user.rol==='os'){['sectionAdmin','navUsuarios','navCajeros','navExportar','dashCajerosSection'].forEach(id=>{const el=document.getElementById(id);if(el)el.style.display=id==='sectionAdmin'?'block':'flex';});document.getElementById('dashCajerosSection').style.display='block';}
   if(user.rol==='os'){document.getElementById('navOS').style.display='flex';document.getElementById('sectionOS').style.display='block';}
-  document.getElementById('dashFecha').textContent=new Date().toLocaleDateString('es-MX',{timeZone:'America/Mexico_City',weekday:'long',year:'numeric',month:'long',day:'numeric'});
-  document.getElementById('corteDesde').value=new Date().toISOString().split('T')[0]+'T00:00';
+  document.getElementById('dashFecha').textContent=new Date().toLocaleDateString('es-MX',{weekday:'long',year:'numeric',month:'long',day:'numeric'});
+  const ahoraLocal=new Date();
+  const hoyLocal=new Date(ahoraLocal.getTime()-ahoraLocal.getTimezoneOffset()*60000).toISOString().split('T')[0];
+  document.getElementById('corteDesde').value=hoyLocal+'T00:00';
   loadDashboard();loadProductosPos();
 }
 
@@ -573,6 +623,7 @@ function showPage(page,el){
   if(page==='cajeros'){setCajeroHoy();loadCajerosActividad();}
   if(page==='exportar')setExportHoy();
   if(page==='deudas')loadDeudas();
+  if(page==='corporativo')loadCorpUsuarios();
   if(page==='os')loadOSUsuarios();
 }
 
@@ -586,8 +637,8 @@ async function loadDashboard(){
     document.getElementById('dashUltimasVentas').innerHTML=d.ultimas_ventas.map(v=>`<tr><td><span class="badge badge-blue">${v.folio}</span></td><td>${v.cajero||'—'}</td><td>$${v.total.toFixed(2)}</td></tr>`).join('')||'<tr><td colspan="3" style="color:var(--muted);text-align:center">Sin ventas hoy</td></tr>';
     document.getElementById('dashAlertas').innerHTML=d.alertas.map(p=>`<tr><td>${p.nombre}</td><td class="stock-low">${p.stock}</td><td>${p.stock_minimo}</td></tr>`).join('')||'<tr><td colspan="3" style="color:var(--success);text-align:center">✅ Todo en orden</td></tr>';
     if(d.alertas_actividad?.length>0)document.getElementById('dashAlertasActividad').innerHTML=d.alertas_actividad.map(a=>`<div class="alerta-card alerta-${a.tipo}">⚠️ ${a.mensaje}</div>`).join('');
-    if((user?.rol==='dueno'||user?.rol==='os')&&d.actividad_cajeros){
-      document.getElementById('dashCajeros').innerHTML=d.actividad_cajeros.map(c=>`<div class="cajero-card"><div class="cajero-info"><div class="cajero-nombre">${c.nombre} <span class="badge ${c.activo?'badge-green':'badge-red'}">${c.activo?'Activo':'Bloqueado'}</span></div><div class="cajero-stats"><span>${c.num_ventas} ventas</span><span>Última: ${fmtHora(c.ultima_venta)||'Sin actividad'}</span></div></div><div class="cajero-total">$${(c.total_vendido||0).toFixed(2)}</div>${c.activo?`<button class="btn btn-danger btn-sm" onclick="toggleCajero(${c.id},'${c.nombre}',true)">🚫 Bloquear</button>`:`<button class="btn btn-primary btn-sm" onclick="toggleCajero(${c.id},'${c.nombre}',false)">✅ Activar</button>`}</div>`).join('')||'<div style="color:var(--muted);font-size:13px">Sin empleados</div>';
+    if(user?.rol==='dueno'&&d.actividad_cajeros){
+      document.getElementById('dashCajeros').innerHTML=d.actividad_cajeros.map(c=>`<div class="cajero-card"><div class="cajero-info"><div class="cajero-nombre">${c.nombre} <span class="badge ${c.activo?'badge-green':'badge-red'}">${c.activo?'Activo':'Bloqueado'}</span></div><div class="cajero-stats"><span>${c.num_ventas} ventas</span><span>Última: ${c.ultima_venta?fmtHora(c.ultima_venta):'Sin actividad'}</span></div></div><div class="cajero-total">$${(c.total_vendido||0).toFixed(2)}</div>${c.activo?`<button class="btn btn-danger btn-sm" onclick="toggleCajero(${c.id},'${c.nombre}',true)">🚫 Bloquear</button>`:`<button class="btn btn-primary btn-sm" onclick="toggleCajero(${c.id},'${c.nombre}',false)">✅ Activar</button>`}</div>`).join('')||'<div style="color:var(--muted);font-size:13px">Sin empleados</div>';
     }
   }catch(e){console.error(e);}
 }
@@ -730,7 +781,7 @@ async function loadInventario(){
     const tipoLabel=esGranel(p)?`<span class="badge badge-purple">${p.tipo_venta==='granel_liquido'?'💧 Líquido':'⚖️ Sólido'}</span>`:`<span class="badge badge-blue">pieza</span>`;
     const stockLabel=esGranel(p)?`${parseFloat(p.stock).toFixed(3)} ${p.unidad_inventario||p.unidad}`:`${p.stock} ${p.unidad}`;
     const precioLabel=esGranel(p)?`$${p.precio_venta.toFixed(2)}/${p.unidad_inventario||p.unidad}`:`$${p.precio_venta.toFixed(2)}`;
-    return `<tr><td style="font-family:'JetBrains Mono',monospace">${p.codigo}</td><td style="font-weight:600">${p.nombre}</td><td><span class="badge badge-blue">${p.categoria}</span></td><td style="font-family:'JetBrains Mono',monospace">${precioLabel}</td><td class="${p.stock<=p.stock_minimo?'stock-low':'stock-ok'}" style="font-weight:700">${stockLabel}</td><td>${p.stock_minimo}</td><td>${tipoLabel}</td><td style="display:flex;gap:6px"><button class="btn btn-secondary btn-sm" onclick="editarProducto(${p.id})">✏️</button><button class="btn btn-secondary btn-sm" onclick="abrirStock(${p.id},'${p.nombre.replace(/'/g,"\\'")}')">📦</button>${user.rol==='dueno'||user.rol==='os'?`<button class="btn btn-danger btn-sm" onclick="eliminarProducto(${p.id})">🗑</button>`:''}</td></tr>`;
+    return `<tr><td style="font-family:'JetBrains Mono',monospace">${p.codigo}</td><td style="font-weight:600">${p.nombre}</td><td><span class="badge badge-blue">${p.categoria}</span></td><td style="font-family:'JetBrains Mono',monospace">${precioLabel}</td><td class="${p.stock<=p.stock_minimo?'stock-low':'stock-ok'}" style="font-weight:700">${stockLabel}</td><td>${p.stock_minimo}</td><td>${tipoLabel}</td><td style="display:flex;gap:6px"><button class="btn btn-secondary btn-sm" onclick="editarProducto(${p.id})">✏️</button><button class="btn btn-secondary btn-sm" onclick="abrirStock(${p.id},'${p.nombre.replace(/'/g,"\\'")}')">📦</button>${user.rol==='dueno'?`<button class="btn btn-danger btn-sm" onclick="eliminarProducto(${p.id})">🗑</button>`:''}</td></tr>`;
   }).join('')||'<tr><td colspan="8" style="text-align:center;color:var(--muted);padding:20px">Sin productos</td></tr>';
 }
 
@@ -772,7 +823,13 @@ function abrirStock(id,nombre){
 
 async function guardarStock(){const id=document.getElementById('stockProdId').value,tipo=document.getElementById('stockTipo').value,cantidad=parseFloat(document.getElementById('stockCantidad').value),nota=document.getElementById('stockNota').value;try{await api('PATCH','/productos/'+id+'/stock',{tipo,cantidad,nota});closeModal('modalStock');loadInventario();loadProductosPos();}catch(e){alert(e.message);}}
 
-function resetVentasFiltro(){const hoy=new Date().toLocaleDateString('sv-SE',{timeZone:'America/Mexico_City'});document.getElementById('ventasDesde').value=hoy;document.getElementById('ventasHasta').value=hoy;}
+function resetVentasFiltro(){
+  // Fecha local del dispositivo
+  const ahora=new Date();
+  const hoy=new Date(ahora.getTime()-ahora.getTimezoneOffset()*60000).toISOString().split('T')[0];
+  document.getElementById('ventasDesde').value=hoy;
+  document.getElementById('ventasHasta').value=hoy;
+}
 
 async function loadVentas(){
   const desde=document.getElementById('ventasDesde').value,hasta=document.getElementById('ventasHasta').value;
@@ -792,31 +849,29 @@ async function hacerCorte(){
   try{const r=await api('POST','/cortes',{fecha_inicio:desde,notas});const el=document.getElementById('corteResultado');el.style.display='block';el.innerHTML=`<div style="padding:28px"><div style="font-family:'Syne',sans-serif;font-size:18px;font-weight:800;margin-bottom:16px">✅ Corte Generado</div><div style="display:grid;grid-template-columns:1fr 1fr;gap:12px"><div class="stat-card" style="--accent-color:var(--accent)"><div class="stat-label">Total</div><div class="stat-value">$${r.total_ventas.toFixed(2)}</div></div><div class="stat-card"><div class="stat-label">Ventas</div><div class="stat-value">${r.num_ventas}</div></div><div class="stat-card"><div class="stat-label">💵 Efectivo</div><div class="stat-value">$${r.efectivo.toFixed(2)}</div></div><div class="stat-card"><div class="stat-label">💳 Tarjeta</div><div class="stat-value">$${r.tarjeta.toFixed(2)}</div></div></div></div>`;loadCortes();}catch(e){alert(e.message);}
 }
 
-async function loadCortes(){
-  const cortes=await api('GET','/cortes');
-  document.getElementById('cortesTable').innerHTML=cortes.map(c=>`<tr><td>${fmtFecha(c.creado_en)}</td><td>${c.cajero||'—'}</td><td>${c.num_ventas}</td><td>$${c.efectivo.toFixed(2)}</td><td>$${c.tarjeta.toFixed(2)}</td><td style="font-weight:700">$${c.total_ventas.toFixed(2)}</td></tr>`).join('')||'<tr><td colspan="6" style="text-align:center;color:var(--muted)">Sin cortes</td></tr>';
-}
+async function loadCortes(){const cortes=await api('GET','/cortes');document.getElementById('cortesTable').innerHTML=cortes.map(c=>`<tr><td>${fmtFecha(c.creado_en)}</td><td>${c.cajero||'—'}</td><td>${c.num_ventas}</td><td>$${c.efectivo.toFixed(2)}</td><td>$${c.tarjeta.toFixed(2)}</td><td style="font-weight:700">$${c.total_ventas.toFixed(2)}</td></tr>`).join('')||'<tr><td colspan="6" style="text-align:center;color:var(--muted)">Sin cortes</td></tr>';}
 
-async function loadUsuarios(){
-  const users=await api('GET','/usuarios');
-  document.getElementById('usuariosTable').innerHTML=users.map(u=>`<tr><td style="font-weight:600">${u.nombre}</td><td>${u.email}</td><td><span class="badge ${u.rol==='corporativo'?'badge-corp':u.rol==='os'?'badge-os':u.rol==='dueno'?'badge-warn':'badge-blue'}">${u.rol}</span></td><td><span class="badge ${u.activo?'badge-green':'badge-red'}">${u.activo?'Activo':'Inactivo'}</span></td><td>${u.rol!=='corporativo'&&u.rol!=='os'?`<button class="btn btn-sm ${u.activo?'btn-danger':'btn-primary'}" onclick="toggleUsuario(${u.id})">${u.activo?'Desactivar':'Activar'}</button>`:'—'}</td></tr>`).join('');
-}
+async function loadUsuarios(){const users=await api('GET','/usuarios');document.getElementById('usuariosTable').innerHTML=users.map(u=>`<tr><td style="font-weight:600">${u.nombre}</td><td>${u.email}</td><td><span class="badge ${u.rol==='corporativo'?'badge-corp':u.rol==='dueno'?'badge-warn':'badge-blue'}">${u.rol}</span></td><td><span class="badge ${u.activo?'badge-green':'badge-red'}">${u.activo?'Activo':'Inactivo'}</span></td><td>${u.rol!=='corporativo'?`<button class="btn btn-sm ${u.activo?'btn-danger':'btn-primary'}" onclick="toggleUsuario(${u.id})">${u.activo?'Desactivar':'Activar'}</button>`:'—'}</td></tr>`).join('');}
 async function guardarUsuario(){try{await api('POST','/usuarios',{nombre:document.getElementById('userNombre').value,email:document.getElementById('userEmail').value,password:document.getElementById('userPassword').value,rol:document.getElementById('userRol').value});closeModal('modalUsuario');loadUsuarios();}catch(e){alert(e.message);}}
 async function toggleUsuario(id){await api('PATCH','/usuarios/'+id+'/toggle');loadUsuarios();}
-
-function setCajeroHoy(){document.getElementById('cajeroFecha').value=new Date().toLocaleDateString('sv-SE',{timeZone:'America/Mexico_City'});}
+function setCajeroHoy(){document.getElementById('cajeroFecha').value=new Date().toISOString().split('T')[0];}
 
 async function loadCajerosActividad(){
   const fecha=document.getElementById('cajeroFecha').value;
   try{
     const r=await api('GET','/cajeros/actividad?fecha='+fecha),d=await api('GET','/dashboard');
     document.getElementById('alertasActividad').innerHTML=d.alertas_actividad?.length>0?d.alertas_actividad.map(a=>`<div class="alerta-card alerta-${a.tipo}">⚠️ ${a.mensaje}</div>`).join(''):'<div class="alert alert-success">✅ Sin actividad inusual hoy</div>';
-    document.getElementById('cajerosLista').innerHTML=r.cajeros.map(c=>`<div class="cajero-card"><div class="cajero-info"><div class="cajero-nombre">${c.nombre} <span class="badge ${c.activo?'badge-green':'badge-red'}">${c.activo?'Activo':'Bloqueado'}</span></div><div class="cajero-stats"><span>${c.num_ventas} ventas</span><span>💵 $${(c.efectivo||0).toFixed(2)}</span><span>💳 $${(c.tarjeta||0).toFixed(2)}</span><span>📱 $${(c.transferencia||0).toFixed(2)}</span><span>Desc: $${(c.total_descuentos||0).toFixed(2)}</span><span>Última: ${fmtHora(c.ultima_venta)}</span></div></div><div class="cajero-total">$${(c.total_vendido||0).toFixed(2)}</div>${c.activo?`<button class="btn btn-danger btn-sm" onclick="toggleCajero(${c.id},'${c.nombre}',true)">🚫 Bloquear</button>`:`<button class="btn btn-primary btn-sm" onclick="toggleCajero(${c.id},'${c.nombre}',false)">✅ Activar</button>`}</div>`).join('')||'<div style="color:var(--muted);font-size:13px">Sin empleados</div>';
+    document.getElementById('cajerosLista').innerHTML=r.cajeros.map(c=>`<div class="cajero-card"><div class="cajero-info"><div class="cajero-nombre">${c.nombre} <span class="badge ${c.activo?'badge-green':'badge-red'}">${c.activo?'Activo':'Bloqueado'}</span></div><div class="cajero-stats"><span>${c.num_ventas} ventas</span><span>💵 $${(c.efectivo||0).toFixed(2)}</span><span>💳 $${(c.tarjeta||0).toFixed(2)}</span><span>📱 $${(c.transferencia||0).toFixed(2)}</span><span>Desc: $${(c.total_descuentos||0).toFixed(2)}</span><span>Última: ${c.ultima_venta?fmtHora(c.ultima_venta):'Sin actividad'}</span></div></div><div class="cajero-total">$${(c.total_vendido||0).toFixed(2)}</div>${c.activo?`<button class="btn btn-danger btn-sm" onclick="toggleCajero(${c.id},'${c.nombre}',true)">🚫 Bloquear</button>`:`<button class="btn btn-primary btn-sm" onclick="toggleCajero(${c.id},'${c.nombre}',false)">✅ Activar</button>`}</div>`).join('')||'<div style="color:var(--muted);font-size:13px">Sin empleados</div>';
   }catch(e){console.error(e);}
 }
 
-function setExportHoy(){const h=new Date().toLocaleDateString('sv-SE',{timeZone:'America/Mexico_City'});document.getElementById('exportDesde').value=h;document.getElementById('exportHasta').value=h;}
-function setExportMes(){const n=new Date();document.getElementById('exportDesde').value=new Date(n.getFullYear(),n.getMonth(),1).toLocaleDateString('sv-SE',{timeZone:'America/Mexico_City'});document.getElementById('exportHasta').value=new Date(n.getFullYear(),n.getMonth()+1,0).toLocaleDateString('sv-SE',{timeZone:'America/Mexico_City'});}
+function setExportHoy(){
+  const ahora=new Date();
+  const h=new Date(ahora.getTime()-ahora.getTimezoneOffset()*60000).toISOString().split('T')[0];
+  document.getElementById('exportDesde').value=h;
+  document.getElementById('exportHasta').value=h;
+}
+function setExportMes(){const n=new Date();document.getElementById('exportDesde').value=new Date(n.getFullYear(),n.getMonth(),1).toISOString().split('T')[0];document.getElementById('exportHasta').value=new Date(n.getFullYear(),n.getMonth()+1,0).toISOString().split('T')[0];}
 function clearExportFechas(){document.getElementById('exportDesde').value='';document.getElementById('exportHasta').value='';}
 
 function exportar(tipo){
@@ -827,72 +882,166 @@ function exportar(tipo){
 
 function descargarBackup(){fetch('/api/backup',{headers:{'Authorization':'Bearer '+token}}).then(r=>r.blob()).then(blob=>{const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=`tienda_backup_${new Date().toISOString().split('T')[0]}.db`;a.click();}).catch(e=>alert('Error: '+e.message));}
 
-// ===== OS =====
-async function loadOSUsuarios(){
-  try{
-    const users=await api('GET','/os/usuarios');
-    document.getElementById('osUsuariosTable').innerHTML=users.map(u=>`<tr><td style="font-weight:600">${u.nombre}</td><td>${u.email}</td><td><span class="badge ${u.rol==='os'?'badge-os':u.rol==='dueno'?'badge-warn':'badge-blue'}">${u.rol.toUpperCase()}</span></td><td><span class="badge ${u.activo?'badge-green':'badge-red'}">${u.activo?'Activo':'Inactivo'}</span></td><td>${u.rol!=='os'?`<button class="btn btn-sm ${u.activo?'btn-danger':'btn-primary'}" onclick="toggleOSUsuario(${u.id})">${u.activo?'Desactivar':'Activar'}</button>`:'—'}</td></tr>`).join('');
-  }catch(e){console.error(e);}
+
+
+// ===================== OS =====================
+async function loadOSUsuarios() {
+  try {
+    const users = await api('GET', '/os/usuarios');
+    document.getElementById('osUsuariosTable').innerHTML = users.map(u => `
+      <tr>
+        <td style="font-weight:600">${u.nombre}</td>
+        <td>${u.email}</td>
+        <td><span class="badge ${u.rol==='os'?'badge-os':u.rol==='dueno'?'badge-warn':'badge-blue'}">${u.rol.toUpperCase()}</span></td>
+        <td><span class="badge ${u.activo?'badge-green':'badge-red'}">${u.activo?'Activo':'Inactivo'}</span></td>
+        <td>${u.rol!=='os'?`<button class="btn btn-sm ${u.activo?'btn-danger':'btn-primary'}" onclick="toggleOSUsuario(${u.id})">${u.activo?'Desactivar':'Activar'}</button>`:'—'}</td>
+      </tr>`).join('');
+  } catch(e) { console.error(e); }
 }
 
-async function guardarOSUsuario(){
-  try{
-    await api('POST','/os/usuarios',{nombre:document.getElementById('osUserNombre').value,email:document.getElementById('osUserEmail').value,password:document.getElementById('osUserPassword').value,rol:document.getElementById('osUserRol').value});
-    closeModal('modalOSUsuario');loadOSUsuarios();
-  }catch(e){alert(e.message);}
+async function guardarOSUsuario() {
+  try {
+    await api('POST', '/os/usuarios', {
+      nombre: document.getElementById('osUserNombre').value,
+      email: document.getElementById('osUserEmail').value,
+      password: document.getElementById('osUserPassword').value,
+      rol: document.getElementById('osUserRol').value
+    });
+    closeModal('modalOSUsuario');
+    loadOSUsuarios();
+  } catch(e) { alert(e.message); }
 }
 
-async function toggleOSUsuario(id){await api('PATCH','/usuarios/'+id+'/toggle');loadOSUsuarios();}
+async function toggleOSUsuario(id) {
+  await api('PATCH', '/usuarios/' + id + '/toggle');
+  loadOSUsuarios();
+}
 
-// ===== DEUDAS =====
-async function loadDeudas(){
-  try{
-    const deudas=await api('GET','/deudas');
-    const totalDinero=deudas.reduce((s,d)=>s+(d.monto||0),0);
-    const totalEnvases=deudas.reduce((s,d)=>s+(d.envases||0),0);
-    document.getElementById('deudasResumen').innerHTML=`
-      <div class="stat-card" style="--accent-color:#c2410c;min-width:140px;padding:14px 18px"><div class="stat-label">Deudas activas</div><div class="stat-value" style="font-size:22px">${deudas.length}</div></div>
-      <div class="stat-card" style="--accent-color:#b45309;min-width:140px;padding:14px 18px"><div class="stat-label">Total dinero</div><div class="stat-value" style="font-size:22px">$${totalDinero.toFixed(2)}</div></div>
-      ${totalEnvases>0?`<div class="stat-card" style="--accent-color:#0369a1;min-width:140px;padding:14px 18px"><div class="stat-label">Envases</div><div class="stat-value" style="font-size:22px">${totalEnvases}</div></div>`:''}`;
-    if(!deudas.length){document.getElementById('deudasLista').innerHTML='<div style="text-align:center;color:var(--muted);padding:40px;font-size:14px">✅ Sin deudas registradas</div>';return;}
-    document.getElementById('deudasLista').innerHTML=deudas.map(d=>`
+
+// ===== CORPORATIVO =====
+async function loadCorpUsuarios() {
+  try {
+    const users = await api('GET', '/corporativo/usuarios');
+    document.getElementById('corpUsuariosTable').innerHTML = users.map(u =>
+      `<tr>
+        <td style="font-weight:600">${u.nombre}</td>
+        <td>${u.email}</td>
+        <td><span class="badge ${u.rol==='dueno'?'badge-warn':u.rol==='corporativo'?'badge-purple':'badge-blue'}">${u.rol}</span></td>
+        <td><span class="badge ${u.activo?'badge-green':'badge-red'}">${u.activo?'Activo':'Inactivo'}</span></td>
+        <td>${u.rol!=='corporativo'?`<button class="btn btn-sm ${u.activo?'btn-danger':'btn-primary'}" onclick="toggleCorpUsuario(${u.id})">${u.activo?'Desactivar':'Activar'}</button>`:'—'}</td>
+      </tr>`
+    ).join('');
+  } catch(e) { console.error(e); }
+}
+
+async function guardarCorpUsuario() {
+  try {
+    await api('POST', '/corporativo/usuarios', {
+      nombre: document.getElementById('corpUserNombre').value,
+      email: document.getElementById('corpUserEmail').value,
+      password: document.getElementById('corpUserPassword').value,
+      rol: document.getElementById('corpUserRol').value
+    });
+    closeModal('modalCorpUsuario');
+    loadCorpUsuarios();
+  } catch(e) { alert(e.message); }
+}
+
+async function toggleCorpUsuario(id) {
+  await api('PATCH', '/corporativo/usuarios/' + id + '/toggle');
+  loadCorpUsuarios();
+}
+
+// ===================== DEUDAS =====================
+async function loadDeudas() {
+  try {
+    const deudas = await api('GET', '/deudas');
+    const totalDinero = deudas.reduce((s, d) => s + (d.monto || 0), 0);
+    const totalEnvases = deudas.reduce((s, d) => s + (d.envases || 0), 0);
+    document.getElementById('deudasResumen').innerHTML = `
+      <div class="stat-card" style="--accent-color:#c2410c;min-width:140px;padding:14px 18px">
+        <div class="stat-label">Deudas activas</div>
+        <div class="stat-value" style="font-size:22px">${deudas.length}</div>
+      </div>
+      <div class="stat-card" style="--accent-color:#b45309;min-width:140px;padding:14px 18px">
+        <div class="stat-label">Total dinero</div>
+        <div class="stat-value" style="font-size:22px">$${totalDinero.toFixed(2)}</div>
+      </div>
+      ${totalEnvases > 0 ? `<div class="stat-card" style="--accent-color:#0369a1;min-width:140px;padding:14px 18px"><div class="stat-label">Envases</div><div class="stat-value" style="font-size:22px">${totalEnvases}</div></div>` : ''}
+    `;
+    if (!deudas.length) {
+      document.getElementById('deudasLista').innerHTML = '<div style="text-align:center;color:var(--muted);padding:40px;font-size:14px">✅ Sin deudas registradas</div>';
+      return;
+    }
+    document.getElementById('deudasLista').innerHTML = deudas.map(d => `
       <div style="background:white;border-radius:14px;border:1px solid var(--border);padding:18px 20px;margin-bottom:12px;display:flex;align-items:flex-start;gap:16px">
         <div style="width:42px;height:42px;border-radius:50%;background:#ffedd5;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0">👤</div>
         <div style="flex:1">
           <div style="font-weight:700;font-size:15px;margin-bottom:4px">${d.nombre}</div>
           <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:4px">
-            ${d.monto>0?`<span class="badge badge-orange">💵 $${d.monto.toFixed(2)}</span>`:''}
-            ${d.envases>0?`<span class="badge badge-blue">🧴 ${d.envases} envase${d.envases!==1?'s':''}</span>`:''}
+            ${d.monto > 0 ? `<span class="badge badge-orange">💵 $${d.monto.toFixed(2)}</span>` : ''}
+            ${d.envases > 0 ? `<span class="badge badge-blue">🧴 ${d.envases} envase${d.envases !== 1 ? 's' : ''}</span>` : ''}
           </div>
-          ${d.notas?`<div style="font-size:12px;color:var(--muted);margin-top:4px">${d.notas}</div>`:''}
-          <div style="font-size:11px;color:var(--muted);margin-top:4px;font-family:'JetBrains Mono',monospace">${fmtFecha(d.creado_en)} · ${d.registrado_por||'—'}</div>
+          ${d.notas ? `<div style="font-size:12px;color:var(--muted);margin-top:4px">${d.notas}</div>` : ''}
+          <div style="font-size:11px;color:var(--muted);margin-top:4px;font-family:'JetBrains Mono',monospace">${fmtFecha(d.creado_en)} · ${d.registrado_por || '—'}</div>
         </div>
         <div style="display:flex;gap:8px;flex-shrink:0">
           <button class="btn btn-secondary btn-sm" onclick="editarDeuda(${d.id})">✏️</button>
-          <button class="btn btn-danger btn-sm" onclick="eliminarDeuda(${d.id},'${d.nombre.replace(/'/g,"\\'")}')">✅ Liquidar</button>
+          <button class="btn btn-danger btn-sm" onclick="eliminarDeuda(${d.id},'${d.nombre.replace(/'/g,"\'")}')">✅ Liquidar</button>
         </div>
-      </div>`).join('');
-  }catch(e){console.error(e);}
+      </div>
+    `).join('');
+  } catch(e) { console.error(e); }
 }
 
-function limpiarFormDeuda(){document.getElementById('deudaId').value='';document.getElementById('deudaNombre').value='';document.getElementById('deudaMonto').value='';document.getElementById('deudaEnvases').value='';document.getElementById('deudaNotas').value='';document.getElementById('modalDeudaTitle').textContent='Nueva Deuda';}
-
-async function guardarDeuda(){
-  const id=document.getElementById('deudaId').value;
-  const nombre=document.getElementById('deudaNombre').value.trim();
-  if(!nombre)return alert('El nombre es requerido');
-  const data={nombre,monto:parseFloat(document.getElementById('deudaMonto').value)||0,envases:parseInt(document.getElementById('deudaEnvases').value)||0,notas:document.getElementById('deudaNotas').value.trim()};
-  try{if(id)await api('PUT','/deudas/'+id,data);else await api('POST','/deudas',data);closeModal('modalDeuda');limpiarFormDeuda();loadDeudas();}catch(e){alert(e.message);}
+function limpiarFormDeuda() {
+  document.getElementById('deudaId').value = '';
+  document.getElementById('deudaNombre').value = '';
+  document.getElementById('deudaMonto').value = '';
+  document.getElementById('deudaEnvases').value = '';
+  document.getElementById('deudaNotas').value = '';
+  document.getElementById('modalDeudaTitle').textContent = 'Nueva Deuda';
 }
 
-function editarDeuda(id){
-  api('GET','/deudas').then(deudas=>{
-    const d=deudas.find(x=>x.id===id);if(!d)return;
-    document.getElementById('deudaId').value=d.id;document.getElementById('deudaNombre').value=d.nombre;document.getElementById('deudaMonto').value=d.monto||'';document.getElementById('deudaEnvases').value=d.envases||'';document.getElementById('deudaNotas').value=d.notas||'';document.getElementById('modalDeudaTitle').textContent='Editar Deuda';openModal('modalDeuda');
+async function guardarDeuda() {
+  const id = document.getElementById('deudaId').value;
+  const nombre = document.getElementById('deudaNombre').value.trim();
+  if (!nombre) return alert('El nombre es requerido');
+  const data = {
+    nombre,
+    monto: parseFloat(document.getElementById('deudaMonto').value) || 0,
+    envases: parseInt(document.getElementById('deudaEnvases').value) || 0,
+    notas: document.getElementById('deudaNotas').value.trim()
+  };
+  try {
+    if (id) await api('PUT', '/deudas/' + id, data);
+    else await api('POST', '/deudas', data);
+    closeModal('modalDeuda');
+    limpiarFormDeuda();
+    loadDeudas();
+  } catch(e) { alert(e.message); }
+}
+
+function editarDeuda(id) {
+  const cards = document.getElementById('deudasLista').querySelectorAll('[data-id]');
+  api('GET', '/deudas').then(deudas => {
+    const d = deudas.find(x => x.id === id);
+    if (!d) return;
+    document.getElementById('deudaId').value = d.id;
+    document.getElementById('deudaNombre').value = d.nombre;
+    document.getElementById('deudaMonto').value = d.monto || '';
+    document.getElementById('deudaEnvases').value = d.envases || '';
+    document.getElementById('deudaNotas').value = d.notas || '';
+    document.getElementById('modalDeudaTitle').textContent = 'Editar Deuda';
+    openModal('modalDeuda');
   });
 }
 
-async function eliminarDeuda(id,nombre){if(!confirm(`¿Marcar como liquidada la deuda de ${nombre}?`))return;try{await api('DELETE','/deudas/'+id);loadDeudas();}catch(e){alert(e.message);}}
+async function eliminarDeuda(id, nombre) {
+  if (!confirm(`¿Marcar como liquidada la deuda de ${nombre}?`)) return;
+  try { await api('DELETE', '/deudas/' + id); loadDeudas(); }
+  catch(e) { alert(e.message); }
+}
 
 if(token&&user)initApp();else document.getElementById('loginScreen').style.display='flex';
 document.addEventListener('keydown',e=>{if(e.key==='Escape')document.querySelectorAll('.modal-overlay.open').forEach(m=>m.classList.remove('open'));});
